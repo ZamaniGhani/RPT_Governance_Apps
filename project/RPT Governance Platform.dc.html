@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="_ds/industry-88dc73d2-7f11-4ee1-af8d-e6844ba077e9/styles.css">
+<script src="_ds/industry-88dc73d2-7f11-4ee1-af8d-e6844ba077e9/_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--color-bg)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-900)}</style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><rect width="240" height="240" fill="#1d2d3d"></rect><rect x="72" y="72" width="96" height="96" fill="none" stroke="#5980a6" stroke-width="2"></rect><text x="120" y="132" text-anchor="middle" font-family="Barlow Condensed, system-ui, sans-serif" font-weight="700" font-size="46" fill="#f2f2f3">RPT</text></svg></template>
+<section style="padding:44px 48px 36px;border-bottom:1px solid var(--color-divider)" id="t1">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 24px">
+    <a href="#t1" style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-accent-900);color:#fff;text-decoration:none">1</a>
+    <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">RPT Governance Platform — architecture position, then the console</span>
+  </div>
+
+  <div style="max-width:1300px;display:flex;flex-direction:column;gap:30px">
+
+    <div class="blueprint" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="padding:18px 20px;border-right:1px solid var(--color-divider);display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">What I took from your answers</span>
+        <p style="margin:0;font-size:13px;line-height:1.5">Responsive web, no native app. Four roles: company secretary, finance submitter, compliance officer, and every employee once a year for their declaration. Greenfield, so no integration constraints — but also no ERP feed, which means <b>intake is manual and the screening has to happen at the keystroke</b>, not in a nightly batch.</p>
+      </div>
+      <div style="padding:18px 20px;border-right:1px solid var(--color-divider);display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">The console ships empty</span>
+        <p style="margin:0;font-size:13px;line-height:1.5">No sample records. Every party, case, evaluation and audit event you see below is one you create through Intake — which is the honest way to judge the flow, because the first month of a governance system is spent on an empty register. Each tab carries its own empty state and its own first-run instruction.</p>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:8px">
+        <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Where I push back</span>
+        <p style="margin:0;font-size:13px;line-height:1.5">"Fully modelled MMLR Chapter 10" is the right ambition and the main source of debt if done naively. Thresholds must be versioned data, not code, and every decision must pin the rule-set version it was judged under. ADR-02 and ADR-03 below. I'd also refuse a configurable workflow builder.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Bounded contexts — one modular monolith, six modules, separate schemas</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:18px">
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Party Registry</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">Persons, entities, directorships, shareholdings, family links — effective-dated edges. Owns the relatedness graph and answers "who was related to whom on 14 March".</span></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Transaction Intake</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">RPT and RRPT records, counterparties, consideration, documents. Screens every counterparty against the graph as it is typed.</span></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Materiality Engine</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">Percentage-ratio tests, 12-month aggregation, RRPT mandate consumption. Pure functions over a versioned rule set; knows nothing about workflow.</span></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Approval Workflow</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">A state machine per case type: interested-party exclusion, quorum, abstention. Declarative route definitions, not a general BPM.</span></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Declarations (COI)</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">Annual campaigns and event-driven declarations. Writes a <i>proposal</i> to Party Registry, never a direct edit — the secretariat confirms.</span></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:13px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><h5 style="margin:0;font-size:14px">Disclosure &amp; Audit</h5><span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">Append-only event log, announcement and circular packs, the annual-report RPT schedule. Read-only projections; the retention boundary.</span></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">The store — PostgreSQL, one database, a schema per module</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(324px,1fr));gap:16px">
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <h4 style="margin:0;font-size:15px">registry</h4>
+          <pre style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.65;white-space:pre-wrap;color:var(--color-neutral-800)">party(id, kind[person|entity], legal_name,
+      nric_or_reg_no, created_at)
+party_relation(id, from_party, to_party,
+      basis[spouse|child|director|shareholder|
+            control|associate], source[declared|
+            detected|manual], confidence,
+      effective_from, effective_to,
+      confirmed_by, confirmed_at)</pre>
+          <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">No <code>UPDATE</code> on <code>party_relation</code> — a change closes the row with <code>effective_to</code> and inserts a successor. Every register query carries an as-at date; the default is <code>now()</code>.</span>
+        </div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <h4 style="margin:0;font-size:15px">intake</h4>
+          <pre style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.65;white-space:pre-wrap;color:var(--color-neutral-800)">rpt_case(id, ref, kind[rpt|rrpt],
+      counterparty_party_id, nature,
+      consideration_myr, currency, fx_rate,
+      transaction_date, submitted_by,
+      rule_set_version, route_version, status)
+rpt_document(id, case_id, kind, filename,
+      byte_size, sha256, uploaded_by, at)</pre>
+          <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)"><code>rule_set_version</code> and <code>route_version</code> are written at creation and never migrated. Documents are content-addressed by hash so an evidence pack can prove nothing was swapped.</span>
+        </div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <h4 style="margin:0;font-size:15px">materiality</h4>
+          <pre style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.65;white-space:pre-wrap;color:var(--color-neutral-800)">rule_set(version, effective_from,
+      thresholds jsonb, retired_at)
+financial_period(id, entity_scope, label,
+      basis[audited|unaudited|proforma],
+      period_end, net_assets, total_assets,
+      market_cap, net_profit,
+      source_document_id, confirmed_by)
+materiality_evaluation(id, case_id,
+      rule_set_version, financial_period_id,
+      ratios jsonb, aggregate_myr, gate,
+      computed_at)</pre>
+          <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">Evaluations are stored, not recomputed on read. A ratio shown to an approver in 2026 must still render identically in 2031 after four rule sets and five financial years.</span>
+        </div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <h4 style="margin:0;font-size:15px">workflow · declarations · audit</h4>
+          <pre style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;line-height:1.65;white-space:pre-wrap;color:var(--color-neutral-800)">approval_step(id, case_id, seq, role,
+      actor_id, decision, rationale,
+      decided_at, excluded_reason)
+mandate(id, party_id, period, ceiling_myr,
+      consumed_myr, approved_at)
+declaration(id, campaign_id, person_id,
+      status, submitted_at)
+declared_interest(id, declaration_id,
+      entity_name, nature,
+      proposed_party_relation_id)
+event(id, aggregate_type, aggregate_id, seq,
+      type, payload jsonb, actor_id,
+      occurred_at, prev_hash, hash)</pre>
+          <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)"><code>event</code> is append-only and hash-chained, unique on <code>(aggregate_id, seq)</code>. Write permission is granted to one role; nothing in the application can issue <code>DELETE</code> against it.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Decisions — and what each one costs</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(296px,1fr));gap:16px">
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-01</span><h4 style="margin:0;font-size:15px">Modular monolith, not microservices</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">A listed company runs a few hundred RPTs a year. Microservices buy scale you will never need and charge you distributed transactions across a graph that must stay consistent. Modules keep separate schemas and communicate through published events, so extraction remains possible later.<br><b style="color:var(--color-accent-700)">Cost:</b> boundaries are discipline, not runtime. Enforce with import linting in CI.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-02</span><h4 style="margin:0;font-size:15px">Declarative routes, not a workflow builder</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">A drag-and-drop approval designer becomes an untestable graph nobody can audit. Instead: versioned route definitions that go through code review, each an explicit state machine with typed guards. A case pins its route version at creation, so a later rule change never rewrites history.<br><b style="color:var(--color-accent-700)">Cost:</b> a new route needs a release, not an admin screen. In exchange every approval is reproducible years later.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-03</span><h4 style="margin:0;font-size:15px">Thresholds as effective-dated data</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">Chapter 10 changes. The 0.25% announcement trigger, the 5% circular-and-approval trigger, the RRPT floor and the 12-month aggregation window live in a versioned rule set evaluated against the transaction's own date — never <code>if (ratio &gt; 0.05)</code> inside a service.<br><b style="color:var(--color-accent-700)">Cost:</b> rule authoring needs its own test harness and a golden-case suite. Non-optional if "fully modelled" is to mean anything.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-04</span><h4 style="margin:0;font-size:15px">Event sourcing only where it earns it</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">Party Registry and Disclosure &amp; Audit are append-only, because the questions asked of them are historical. Everything else stays ordinary CRUD with change-data audit rows.<br><b style="color:var(--color-accent-700)">Cost:</b> two persistence idioms in one codebase. Cheaper than taxing every simple form with an event store.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-05</span><h4 style="margin:0;font-size:15px">Screening at the keystroke, not in a batch</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">With no ERP feed, the only moment you can catch an unflagged related party is while the submitter is typing. Counterparty screening and ratio evaluation are synchronous read-model queries behind a 150&nbsp;ms budget; the graph projection is denormalised for exactly this call.<br><b style="color:var(--color-accent-700)">Cost:</b> a projection to keep warm and invalidate on every registry change.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-06</span><h4 style="margin:0;font-size:15px">Uploaded financials are a period, not a setting</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">A balance sheet and P&amp;L upload creates a new <code>financial_period</code> row and a hashed source document — it never overwrites the denominators in place. Extracted figures land unconfirmed; a human confirms before any case may cite them, and each evaluation stores the period id it used.<br><b style="color:var(--color-accent-700)">Cost:</b> a confirmation step between upload and use, and parsing that must degrade to manual entry. The alternative — editable global numbers — silently rewrites the materiality of every historic case.</p></div>
+        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--color-accent-900);color:#fff;align-self:flex-start">ADR-07</span><h4 style="margin:0;font-size:15px">Conflict detection suggests; a human confirms</h4><p style="margin:0;font-size:12.5px;line-height:1.5;color:var(--color-neutral-800)">Traversal proposes a conflict with a confidence and a visible reason path. Auto-blocking on fuzzy name matches produces false positives that destroy trust in the register within a quarter.<br><b style="color:var(--color-accent-700)">Cost:</b> a standing review queue for the secretariat. That queue is the control, not a defect.</p></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start;margin-top:6px">
+
+      <div style="display:flex;flex-direction:column;gap:10px" id="1a">
+        <div style="display:flex;align-items:baseline;gap:8px;font-size:11.5px;color:var(--color-neutral-700);max-width:1180px"><a href="#1a" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1a</a>Governance console, desktop — no seeded data. Go to Intake, key a counterparty and a consideration, upload financials to supply the denominators, then submit: the case, the register entry and the audit events are all created by that one write.</div>
+        <div class="blueprint" style="width:1180px;background:var(--color-surface)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="display:flex;height:760px">
+
+            <div style="width:186px;border-right:1px solid var(--color-divider);display:flex;flex-direction:column">
+              <div style="padding:16px 16px 14px;border-bottom:1px solid var(--color-divider)">
+                <div style="font-family:var(--font-heading);font-weight:700;font-size:17px;line-height:1;letter-spacing:.01em">RPT&nbsp;GOVERNANCE</div>
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600);margin-top:5px">{{ entityName }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+                  <button onClick="{{ go }}" data-id="{{ n.id }}" style="display:flex;align-items:center;gap:9px;padding:11px 15px;border:0;border-left:2px solid {{ n.edge }};background:{{ n.bg }};color:{{ n.fg }};font-family:var(--font-heading);font-weight:600;font-size:13.5px;letter-spacing:.02em;cursor:pointer;text-align:left;min-height:44px">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.8"><path d="{{ n.icon }}"></path></svg>{{ n.label }}
+                    <span style="margin-left:auto;font-family:var(--font-body);font-size:10.5px;color:var(--color-neutral-600)">{{ n.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="margin-top:auto;padding:14px 15px;border-top:1px solid var(--color-divider);display:flex;flex-direction:column;gap:3px">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Rule set</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:13px">MMLR&nbsp;CH10 · v2026.1</div>
+                <div style="font-size:10.5px;color:var(--color-neutral-600)">effective 1 Jan 2026</div>
+              </div>
+            </div>
+
+            <div style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0">
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--color-divider)">
+                <h1 style="margin:0;font-size:22px;line-height:1">{{ heading }}</h1>
+                <span class="tag tag-outline">{{ headingNote }}</span>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+                  <button class="btn btn-secondary" onClick="{{ exportExcel }}" disabled="{{ exportDisabled }}" style="min-height:38px">↓ Export to Excel</button>
+                  <span style="font-size:11px;color:var(--color-neutral-600)">Nurul Aziz · Compliance</span>
+                  <span style="width:26px;height:26px;border:1px solid var(--color-divider);display:grid;place-items:center;font-family:var(--font-heading);font-size:11px">NA</span>
+                </div>
+              </div>
+
+              <sc-if value="{{ banner }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--color-accent-100);border-bottom:1px solid var(--color-accent)">
+                  <span style="font-size:12.5px;line-height:1.4;color:var(--color-accent-900)">{{ banner }}</span>
+                  <button class="btn btn-ghost" onClick="{{ dismiss }}" style="margin-left:auto;min-height:34px">Dismiss</button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isAlerts }}" hint-placeholder-val="{{ true }}">
+                <div style="flex:1;min-height:0;display:flex;min-width:0;overflow:hidden">
+                  <div style="width:452px;border-right:1px solid var(--color-divider);min-height:0;display:flex;flex-direction:column">
+                    <div style="display:flex;border-bottom:1px solid var(--color-divider)">
+                      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+                        <button onClick="{{ setFilter }}" data-id="{{ f.id }}" style="flex:1;padding:9px 6px;border:0;border-right:1px solid var(--color-divider);background:{{ f.bg }};color:{{ f.fg }};font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;min-height:38px">{{ f.label }} <span style="font-family:var(--font-body);opacity:.65">{{ f.count }}</span></button>
+                      </sc-for>
+                    </div>
+                    <div style="flex:1;min-height:0;overflow:auto">
+                      <sc-for list="{{ visibleCases }}" as="c" hint-placeholder-count="0">
+                        <button onClick="{{ openCase }}" data-id="{{ c.id }}" style="display:flex;flex-direction:column;gap:6px;width:100%;padding:13px 18px;border:0;border-bottom:1px solid var(--color-divider);border-left:2px solid {{ c.edge }};background:{{ c.bg }};cursor:pointer;text-align:left;font-family:inherit;color:inherit">
+                          <span style="display:flex;align-items:baseline;gap:8px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--color-neutral-600)">{{ c.ref }}<span style="margin-left:auto">{{ c.age }}</span></span>
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:16px;line-height:1.15">{{ c.title }}</span>
+                          <span style="font-size:12px;color:var(--color-neutral-700)">{{ c.party }} · {{ c.value }}</span>
+                          <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="{{ c.gateClass }}">{{ c.gate }}</span><span class="tag tag-outline">{{ c.top }}</span></span>
+                        </button>
+                      </sc-for>
+                      <sc-if value="{{ noCases }}" hint-placeholder-val="{{ true }}">
+                        <div style="padding:26px 20px;display:flex;flex-direction:column;gap:8px">
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:16px">Queue is empty</span>
+                          <span style="font-size:12.5px;line-height:1.5;color:var(--color-neutral-700)">Nothing has been submitted yet. Cases arrive here the moment a submitter completes Intake — there is no other way in, which is what makes the audit chain complete.</span>
+                          <button class="btn btn-secondary" onClick="{{ goIntake }}" style="align-self:flex-start;min-height:40px;margin-top:4px">Open Intake</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+
+                  <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0;min-height:0;overflow:auto">
+                    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;flex-direction:column;gap:16px">
+                        <div style="display:flex;flex-direction:column;gap:5px">
+                          <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">{{ sel.kind }} · {{ sel.ref }}</span>
+                          <h2 style="margin:0;font-size:24px;line-height:1.1">{{ sel.title }}</h2>
+                          <span style="font-size:12.5px;color:var(--color-neutral-700)">{{ sel.party }} — {{ sel.rel }}</span>
+                        </div>
+
+                        <div class="blueprint" style="display:grid;grid-template-columns:1fr 1fr">
+                          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                          <div style="padding:11px 13px;border-right:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider)"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Consideration</div><div style="font-family:var(--font-heading);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums">{{ sel.value }}</div></div>
+                          <div style="padding:11px 13px;border-bottom:1px solid var(--color-divider)"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Highest ratio</div><div style="font-family:var(--font-heading);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums;color:var(--color-accent-800)">{{ sel.top }}</div></div>
+                          <div style="padding:11px 13px;border-right:1px solid var(--color-divider)"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Aggregated 12&nbsp;mth</div><div style="font-family:var(--font-heading);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums">{{ sel.agg }}</div></div>
+                          <div style="padding:11px 13px"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Transaction date</div><div style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ sel.date }}</div></div>
+                        </div>
+
+                        <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:13px">
+                          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                          <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Evaluation stored with this case</span>
+                          <p style="margin:0;font-size:12.5px;line-height:1.5">{{ sel.reason }}</p>
+                          <div style="display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:12px;padding-top:8px;border-top:1px solid var(--color-divider)">
+                            <span style="color:var(--color-neutral-700)">Rule set pinned</span><span>{{ sel.ruleSet }}</span>
+                            <span style="color:var(--color-neutral-700)">Financial basis</span><span>{{ sel.basis }}</span>
+                            <span style="color:var(--color-neutral-700)">Route version</span><span>{{ sel.route }}</span>
+                          </div>
+                        </div>
+
+                        <sc-if value="{{ sel.decided }}" hint-placeholder-val="{{ false }}">
+                          <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:13px;border:1px solid var(--color-accent);background:var(--color-accent-100)">
+                            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                            <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ sel.decisionLabel }}</span>
+                            <div style="display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:12px">
+                              <span style="color:var(--color-neutral-700)">Event</span><span style="font-family:ui-monospace,Menlo,monospace;font-size:11px">{{ sel.eventId }}</span>
+                              <span style="color:var(--color-neutral-700)">Next step</span><span>{{ sel.nextStep }}</span>
+                            </div>
+                            <button class="btn btn-ghost" onClick="{{ undo }}" style="align-self:flex-start;padding-left:0">Reopen case</button>
+                          </div>
+                        </sc-if>
+
+                        <sc-if value="{{ sel.undecided }}" hint-placeholder-val="{{ true }}">
+                          <div style="display:flex;flex-direction:column;gap:10px">
+                            <div class="field"><label for="rationale">Rationale for the record</label><input class="input" id="rationale" value="{{ rationale }}" onChange="{{ setRationale }}" onInput="{{ setRationale }}" placeholder="Why this decision, in the words that will appear in the minutes"></div>
+                            <div style="display:flex;gap:9px;flex-wrap:wrap">
+                              <button class="btn btn-primary blueprint" onClick="{{ approve }}" style="min-height:44px;padding:0 18px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ sel.approveLabel }}</button>
+                              <button class="btn btn-secondary" onClick="{{ reject }}" style="min-height:44px">Reject</button>
+                              <button class="btn btn-secondary" onClick="{{ refer }}" style="min-height:44px">Return for information</button>
+                            </div>
+                            <p style="margin:0;font-size:11px;line-height:1.5;color:var(--color-neutral-600)">Interested parties are excluded from a case automatically; quorum is recomputed without them.</p>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;max-width:420px">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:17px">No case selected</span>
+                        <span style="font-size:12.5px;line-height:1.5;color:var(--color-neutral-700)">Pick a case from the queue to see the evaluation that was stored with it — the ratios, the rule set and the financial period it was judged against — and to record a decision.</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isIntake }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 396px;min-width:0;overflow:hidden">
+                  <div style="border-right:1px solid var(--color-divider);min-height:0;display:flex;flex-direction:column">
+                    <div style="flex:1;min-height:0;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px">
+                      <div class="field"><label for="cp">Counterparty <span style="color:var(--color-accent-700)">· required</span></label><input class="input" id="cp" value="{{ form.party }}" onChange="{{ setParty }}" onInput="{{ setParty }}" placeholder="Legal name of the person or entity"></div>
+
+                      <sc-if value="{{ screenMatched }}" hint-placeholder-val="{{ false }}">
+                        <div class="blueprint" style="display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--color-accent);background:var(--color-accent-100)">
+                          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:13.5px">Already in the register</span>
+                          <span style="font-size:12px;line-height:1.45">{{ screenText }}</span>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ screenNew }}" hint-placeholder-val="{{ false }}">
+                        <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:12px">
+                          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:13.5px">Not in the register — this submission will propose an entry</span>
+                          <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-800)">Submitting inserts a <code>party</code> row and an unconfirmed <code>party_relation</code> edge for the secretariat to confirm. It is a proposal, never a direct write to the register (ADR-07).</span>
+                          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                            <div class="field"><label for="ptype">Party type</label><select class="input" id="ptype" value="{{ form.partyType }}" onChange="{{ setPartyType }}"><option value="Entity">Entity</option><option value="Person">Person</option></select></div>
+                            <div class="field"><label for="basis">Basis of relationship <span style="color:var(--color-accent-700)">· required</span></label><select class="input" id="basis" value="{{ form.basis }}" onChange="{{ setBasis }}"><option value="">Select a basis…</option><sc-for list="{{ bases }}" as="b" hint-placeholder-count="6"><option value="{{ b }}">{{ b }}</option></sc-for></select></div>
+                          </div>
+                        </div>
+                      </sc-if>
+
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="field"><label for="nat">Nature of transaction <span style="color:var(--color-accent-700)">· required</span></label><input class="input" id="nat" value="{{ form.nature }}" onChange="{{ setNature }}" onInput="{{ setNature }}" placeholder="e.g. provision of haulage services"></div>
+                        <div class="field"><label for="tdate">Transaction date</label><input class="input" type="date" id="tdate" value="{{ form.date }}" onChange="{{ setDate }}"></div>
+                      </div>
+
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="field"><label for="kind">Classification</label><select class="input" id="kind" value="{{ form.kind }}" onChange="{{ setKind }}"><option value="One-off related party transaction">One-off related party transaction</option><option value="Recurrent related party transaction">Recurrent related party transaction</option><option value="Recurring transaction outside the RRPT mandate regime">Recurring, outside the RRPT mandate regime</option></select></div>
+                        <div class="field"><label for="amt">Consideration, RM million <span style="color:var(--color-accent-700)">· required</span></label><input class="input" type="number" id="amt" min="0" step="0.1" value="{{ form.amount }}" onChange="{{ setAmount }}" onInput="{{ setAmount }}" placeholder="0.0"></div>
+                      </div>
+
+                      <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid {{ finBorder }};background:{{ finBg }}">
+                        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                          <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Financial basis — the ratio denominators</span>
+                          <label for="fin" class="btn btn-secondary" style="margin-left:auto;min-height:38px;cursor:pointer">↑ Upload balance sheet &amp; P&amp;L</label>
+                          <input type="file" id="fin" accept=".xlsx,.xls,.csv,.pdf" onChange="{{ uploadFin }}" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+                        </div>
+                        <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-800)">{{ finNote }}</span>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                          <div class="field"><label for="fna">Net assets, RM m</label><input class="input" id="fna" type="number" step="0.1" value="{{ form.na }}" onChange="{{ setNA }}" onInput="{{ setNA }}" placeholder="from balance sheet"></div>
+                          <div class="field"><label for="fta">Total assets, RM m</label><input class="input" id="fta" type="number" step="0.1" value="{{ form.ta }}" onChange="{{ setTA }}" onInput="{{ setTA }}" placeholder="from balance sheet"></div>
+                          <div class="field"><label for="fpbt">Profit before tax, RM m</label><input class="input" id="fpbt" type="number" step="0.1" value="{{ form.pbt }}" onChange="{{ setPBT }}" onInput="{{ setPBT }}" placeholder="from P&amp;L"></div>
+                          <div class="field"><label for="fcap">Market capitalisation, RM m</label><input class="input" id="fcap" type="number" step="0.1" value="{{ form.cap }}" onChange="{{ setCAP }}" onInput="{{ setCAP }}" placeholder="not in the statements"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 20px;border-top:1px solid var(--color-divider);background:var(--color-surface)">
+                      <button class="btn btn-primary blueprint" onClick="{{ submitCase }}" disabled="{{ submitDisabled }}" style="min-height:46px;padding:0 20px;flex:1 1 240px;justify-content:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ submitLabel }}</button>
+                      <button class="btn btn-ghost" onClick="{{ resetForm }}" style="min-height:46px">Clear form</button>
+                      <span style="font-size:11px;line-height:1.4;color:var(--color-neutral-600);flex:1 1 160px">{{ submitHint }}</span>
+                    </div>
+                  </div>
+
+                  <div style="min-height:0;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px">
+                    <div style="display:flex;flex-direction:column;gap:3px">
+                      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Percentage ratio tests · MMLR 10.02(g)</span>
+                      <span style="font-size:11px;color:var(--color-neutral-600)">{{ testsNote }}</span>
+                    </div>
+                    <div class="blueprint" style="display:flex;flex-direction:column">
+                      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                      <sc-for list="{{ tests }}" as="t" hint-placeholder-count="4">
+                        <div style="display:flex;flex-direction:column;gap:6px;padding:11px 12px;border-bottom:1px solid var(--color-divider)">
+                          <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:12px;color:var(--color-neutral-800)">{{ t.label }}</span><span style="margin-left:auto;font-family:var(--font-heading);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;color:{{ t.fg }}">{{ t.pct }}</span></div>
+                          <div style="height:6px;background:var(--color-neutral-200);position:relative"><i style="{{ t.bar }}"></i><span style="position:absolute;top:-3px;bottom:-3px;left:5%;width:1px;background:var(--color-accent-900)"></span></div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div class="blueprint" style="display:flex;flex-direction:column;gap:8px;padding:13px;border:1px solid {{ gateBorder }};background:{{ gateBg }}">
+                      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                      <span style="font-family:var(--font-heading);font-weight:600;font-size:16px;line-height:1.15;color:{{ gateFg }}">{{ gateTitle }}</span>
+                      <span style="font-size:12.5px;line-height:1.5;color:{{ gateFg }}">{{ gateBody }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">What submitting writes</span>
+                      <sc-for list="{{ writes }}" as="w" hint-placeholder-count="4">
+                        <div style="display:flex;gap:9px;align-items:baseline;font-size:12px;padding:6px 0;border-bottom:1px solid var(--color-divider)"><span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--color-accent-700)">{{ w.op }}</span><span style="font-family:ui-monospace,Menlo,monospace;font-size:11px">{{ w.table }}</span><span style="margin-left:auto;text-align:right;font-size:11px;color:var(--color-neutral-700)">{{ w.note }}</span></div>
+                      </sc-for>
+                      <span style="font-size:11px;line-height:1.5;color:var(--color-neutral-600)">All of it in one transaction. If any row fails, nothing is written and the submitter keeps the form — a half-registered transaction is worse than none.</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1;min-height:0;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+                  <div style="padding:16px 20px;border-bottom:1px solid var(--color-divider);display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+                    <div class="field" style="flex:1 1 240px"><label for="q">Search the related party register</label><input class="input" id="q" value="{{ query }}" onChange="{{ setQuery }}" onInput="{{ setQuery }}" placeholder="Name, entity or basis of relationship"></div>
+                    <span style="font-size:11.5px;color:var(--color-neutral-600);padding-bottom:9px">{{ resultCount }}</span>
+                  </div>
+                  <div style="flex:1;min-height:0;overflow:auto">
+                    <sc-if value="{{ hasParties }}" hint-placeholder-val="{{ false }}">
+                      <table class="table" style="width:100%">
+                        <thead><tr><th style="text-align:left">Party</th><th style="text-align:left">Type</th><th style="text-align:left">Basis of relationship</th><th style="text-align:left">Effective from</th><th style="text-align:left">Status</th><th style="text-align:right">RPTs</th></tr></thead>
+                        <tbody>
+                          <sc-for list="{{ parties }}" as="p" hint-placeholder-count="0">
+                            <tr>
+                              <td><span style="font-family:var(--font-heading);font-weight:600;font-size:14.5px">{{ p.name }}</span></td>
+                              <td><span class="tag tag-neutral">{{ p.type }}</span></td>
+                              <td style="font-size:12.5px;color:var(--color-neutral-800)">{{ p.basis }}</td>
+                              <td style="font-size:12.5px;font-variant-numeric:tabular-nums">{{ p.from }}</td>
+                              <td><span class="{{ p.statusClass }}">{{ p.status }}</span></td>
+                              <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px">{{ p.count }}</td>
+                            </tr>
+                          </sc-for>
+                        </tbody>
+                      </table>
+                    </sc-if>
+                    <sc-if value="{{ noParties }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:26px 20px;display:flex;flex-direction:column;gap:8px;max-width:520px">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:17px">{{ registerEmptyTitle }}</span>
+                        <span style="font-size:12.5px;line-height:1.5;color:var(--color-neutral-700)">{{ registerEmptyBody }}</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1;min-height:0;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+                  <div style="padding:16px 20px;border-bottom:1px solid var(--color-divider);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                    <span class="tag tag-accent">{{ eventCount }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-700)">Append-only, hash-chained · 7-year retention</span>
+                    <button class="btn btn-secondary" disabled="{{ exportDisabled }}" style="margin-left:auto;min-height:38px">Export evidence pack</button>
+                  </div>
+                  <div style="flex:1;min-height:0;overflow:auto;padding:6px 20px 0">
+                    <sc-for list="{{ events }}" as="e" hint-placeholder-count="0">
+                      <div style="display:grid;grid-template-columns:140px 1fr;gap:14px;padding:11px 0;border-bottom:1px solid var(--color-divider)">
+                        <div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--color-neutral-700)">{{ e.at }}</span><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--color-neutral-600)">{{ e.actor }}</span></div>
+                        <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:var(--font-heading);font-weight:600;font-size:14px">{{ e.type }}</span><span style="font-size:12px;line-height:1.45;color:var(--color-neutral-800)">{{ e.detail }}</span></div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ noEvents }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:20px 0;display:flex;flex-direction:column;gap:8px;max-width:520px">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:17px">No events recorded</span>
+                        <span style="font-size:12.5px;line-height:1.5;color:var(--color-neutral-700)">The log is written by the system, never by hand. Submit a transaction in Intake and the chain begins: submission, counterparty screening, materiality evaluation, then every decision taken on it.</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isGuidance }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 396px;min-width:0;overflow:hidden">
+                  <div style="min-height:0;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--color-divider)">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Decision flow</span>
+                      <p style="margin:0;font-size:12.5px;line-height:1.5;max-width:560px">Three questions decide the classification, and the classification decides which obligations attach. Answer them here, or run one of the worked examples on the right to see the path light up.</p>
+                    </div>
+
+                    <sc-for list="{{ gSteps }}" as="s" hint-placeholder-count="3">
+                      <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:13px;border-left:2px solid {{ s.edge }};opacity:{{ s.opacity }}">
+                        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                        <div style="display:flex;align-items:baseline;gap:9px">
+                          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--color-accent-700)">{{ s.n }}</span>
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1.15">{{ s.q }}</span>
+                        </div>
+                        <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">{{ s.hint }}</span>
+                        <div style="display:flex;gap:9px;flex-wrap:wrap">
+                          <button class="btn btn-secondary" onClick="{{ s.setNo }}" style="min-height:42px;background:{{ s.noBg }};color:{{ s.noFg }}">{{ s.noText }}</button>
+                          <button class="btn btn-secondary" onClick="{{ s.setYes }}" style="min-height:42px;background:{{ s.yesBg }};color:{{ s.yesFg }}">{{ s.yesText }}</button>
+                        </div>
+                      </div>
+                    </sc-for>
+
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                      <sc-for list="{{ gTerminals }}" as="t" hint-placeholder-count="3">
+                        <div class="blueprint" style="display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid {{ t.bd }};background:{{ t.bg }}">
+                          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                          <span style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1;color:{{ t.fg }}">{{ t.label }}</span>
+                          <span style="font-size:11px;line-height:1.4;color:{{ t.fg }}">{{ t.reach }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div class="blueprint" style="display:flex;flex-direction:column;gap:9px;padding:13px;border:1px solid {{ gVerdictBd }};background:{{ gVerdictBg }}">
+                      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15">{{ gVerdictLabel }}</span>
+                        <span class="{{ gVerdictTag }}">Chapter 10</span>
+                      </div>
+                      <p style="margin:0;font-size:12.5px;line-height:1.5">{{ gVerdictBody }}</p>
+                      <div style="display:flex;gap:9px;flex-wrap:wrap;padding-top:4px">
+                        <sc-if value="{{ gCanStart }}" hint-placeholder-val="{{ false }}">
+                          <button class="btn btn-primary blueprint" onClick="{{ gToIntake }}" style="min-height:44px;padding:0 16px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>{{ gIntakeLabel }}</button>
+                        </sc-if>
+                        <sc-if value="{{ gAnswered }}" hint-placeholder-val="{{ false }}">
+                          <button class="btn btn-ghost" onClick="{{ gReset }}" style="min-height:44px">Start over</button>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="min-height:0;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px">
+                    <div style="display:flex;flex-direction:column;gap:3px">
+                      <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Worked examples</span>
+                      <span style="font-size:11px;color:var(--color-neutral-600)">Illustrative only — these are teaching cases, not records</span>
+                    </div>
+                    <sc-for list="{{ gExamples }}" as="x" hint-placeholder-count="4">
+                      <button onClick="{{ gRunExample }}" data-id="{{ x.id }}" style="display:flex;flex-direction:column;gap:5px;text-align:left;padding:12px;border:1px solid var(--color-divider);border-left:2px solid {{ x.edge }};background:{{ x.bg }};cursor:pointer;font-family:inherit;color:inherit;min-height:44px">
+                        <span style="font-family:var(--font-heading);font-weight:600;font-size:14.5px;line-height:1.2">{{ x.title }}</span>
+                        <span style="font-size:11.5px;line-height:1.45;color:var(--color-neutral-700)">{{ x.note }}</span>
+                      </button>
+                    </sc-for>
+                    <p style="margin:4px 0 0;font-size:11.5px;line-height:1.5;color:var(--color-neutral-700)">The flow settles classification only. Materiality is a separate test: an RPT still has to pass the percentage-ratio thresholds in Intake, and an RRPT still consumes mandate headroom. Classification never substitutes for the ratio calculation.</p>
+                  </div>
+                </div>
+              </sc-if>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px" id="1b">
+        <div style="display:flex;align-items:baseline;gap:8px;font-size:11.5px;color:var(--color-neutral-700);max-width:400px"><a href="#1b" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-neutral-200);color:var(--color-text);text-decoration:none">1b</a>Intake at 400px — fields stack to one column, the ratio panel moves below the form, and the submit bar pins to the bottom of the viewport instead of scrolling away.</div>
+        <div class="blueprint" style="width:400px;background:var(--color-surface)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="height:760px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--color-divider)">
+              <h1 style="margin:0;font-size:20px;line-height:1">New transaction</h1>
+              <span class="tag tag-outline" style="margin-left:auto">Step 1 of 2</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <div class="field"><label for="mcp">Counterparty · required</label><input class="input" id="mcp" placeholder="Legal name of the person or entity"></div>
+              <div class="field"><label for="mnat">Nature of transaction · required</label><input class="input" id="mnat" placeholder="e.g. provision of haulage services"></div>
+              <div class="field"><label for="mamt">Consideration, RM million · required</label><input class="input" id="mamt" type="number" step="0.1" placeholder="0.0"></div>
+              <div class="field"><label for="mdate">Transaction date</label><input class="input" id="mdate" type="date"></div>
+              <div class="blueprint" style="display:flex;flex-direction:column;gap:7px;padding:12px">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <span style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Financial basis</span>
+                <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-800)">None on file. Upload the balance sheet and P&amp;L, or key the four figures, before materiality can be evaluated.</span>
+                <label for="mfin" class="btn btn-secondary" style="align-self:flex-start;min-height:44px;cursor:pointer">↑ Upload balance sheet &amp; P&amp;L</label>
+                <input type="file" id="mfin" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+              </div>
+              <div class="blueprint" style="display:flex;flex-direction:column;gap:7px;padding:12px">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:15px">Awaiting a financial basis</span>
+                <span style="font-size:12px;line-height:1.45;color:var(--color-neutral-800)">The four percentage ratio tests cannot be computed without denominators, so no gate is asserted yet. Nothing is guessed and no default is applied.</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;padding:13px 16px;border-top:1px solid var(--color-divider)">
+              <button class="btn btn-primary blueprint" style="flex:1;min-height:48px;justify-content:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>Continue</button>
+              <button class="btn btn-ghost" style="min-height:48px">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin:8px 0 0;font-size:12px;color:var(--color-neutral-700)">Try next: "add the employee COI declaration flow" · "add the secretariat's confirm-or-dismiss queue for proposed register entries" · "add an import so an opening register can be loaded from a spreadsheet" · "turn the ADRs into a written architecture doc I can circulate"</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+const BASES = ["Spouse of a director", "Child or parent of a director", "Director in common", "Major shareholder — 5% or more", "Controlled by a director or major shareholder", "Associate of the group"];
+const RULE_SET = "MMLR-CH10 v2026.1";
+const ROUTE = "RPT-STD v1";
+const fmt = n => "RM " + Number(n).toFixed(1) + "m";
+const pct = n => n.toFixed(2) + "%";
+const num = v => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : null; };
+const stamp = () => { const d = new Date(); return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); };
+const rid = p => p + Math.random().toString(36).slice(2, 8).toUpperCase();
+const EMPTY_FORM = { party: "", partyType: "Entity", basis: "", nature: "", kind: "One-off related party transaction", date: "", amount: "", na: "", ta: "", pbt: "", cap: "" };
+
+const EXAMPLES = [
+  { id: "ex1", title: "Monthly haulage contract with a company owned by the Managing Director's spouse", note: "Recurring, commercial, in the ordinary course of the group's logistics operations.", a: { related: true, repeat: true, ordinary: true } },
+  { id: "ex2", title: "One-off purchase of a plot of land from a non-executive director", note: "A single asset acquisition, not something the group does day to day.", a: { related: true, repeat: false, ordinary: null } },
+  { id: "ex3", title: "Restructuring advisory fee to a firm in which a director is a partner", note: "Repeats across the engagement, but corporate restructuring is not the group's trade.", a: { related: true, repeat: true, ordinary: false } },
+  { id: "ex4", title: "Office stationery bought from an unrelated supplier on a framework contract", note: "No relationship exists — the first question ends it.", a: { related: false, repeat: null, ordinary: null } }
+];
+
+const VERDICTS = {
+  none: { label: "Answer the questions", body: "Work down the flow. Each answer narrows the classification, and the classification decides which of Chapter 10's obligations attach.", tag: "" },
+  not: { label: "Not a related party transaction", body: "Chapter 10 does not attach. Record it in the ordinary procurement trail if internal policy requires, but no announcement, circular or mandate applies. Re-test if the counterparty later enters the register — relatedness is effective-dated, so a transaction is judged on the position at its own date.", tag: "tag tag-neutral" },
+  rpt: { label: "RPT — one-off related party transaction", body: "Run the four percentage-ratio tests under 10.02(g). At 0.25% or above it needs an immediate announcement; at 5% or above it needs a circular, an independent adviser and shareholder approval, with interested parties abstaining. It also joins the twelve-month aggregation window for this party.", tag: "tag tag-accent" },
+  rptRecurring: { label: "RPT — recurring, but outside the RRPT regime", body: "It repeats, but it is not the group's ordinary trade, so it cannot sit under an AGM mandate. Each occurrence is approved individually as an RPT and run through the percentage-ratio tests, and because the occurrences share a counterparty they aggregate fast inside the twelve-month window — the second or third instalment is what usually crosses 5%. Test the aggregate, not just the invoice in front of you.", tag: "tag tag-accent" },
+  rrpt: { label: "RRPT — recurrent related party transaction", body: "Recurrent and in the ordinary course of business, so it belongs under a shareholder mandate obtained at the AGM (10.09) rather than being approved one by one. Each transaction consumes mandate headroom; exceeding the ceiling means a fresh mandate, and the aggregate is disclosed in the annual report.", tag: "tag tag-accent" }
+};
+
+class Component extends DCLogic {
+  state = { tab: "alerts", filter: "all", selId: null, query: "", rationale: "", banner: "", finFile: "", form: Object.assign({}, EMPTY_FORM), cases: [], parties: [], events: [], g: { related: null, repeat: null, ordinary: null }, gExample: "" };
+
+  fin() {
+    const f = this.state.form;
+    return { na: num(f.na), ta: num(f.ta), pbt: num(f.pbt), cap: num(f.cap) };
+  }
+
+  ratios(v, f) {
+    const rows = [
+      { label: "Value / net assets", d: f.na },
+      { label: "Value / market capitalisation", d: f.cap },
+      { label: "Profits attributable / net profits", d: f.pbt, factor: 0.14 },
+      { label: "Consideration / total assets", d: f.ta }
+    ];
+    return rows.map(r => ({ label: r.label, r: v && r.d ? v * (r.factor || 1) / r.d * 100 : null }));
+  }
+
+  gateFor(top) {
+    if (top === null) return { key: "none", title: "Awaiting inputs", body: "A consideration and at least one denominator are needed before any ratio can be computed. No gate is asserted and no default is applied." };
+    if (top >= 5) return { key: "circular", title: "Circular and shareholder approval", body: "Highest ratio " + pct(top) + " meets the 5% gate. Requires an immediate announcement, a circular to shareholders, an independent adviser's opinion, and approval in general meeting. Interested directors and shareholders must abstain." };
+    if (top >= 0.25) return { key: "announce", title: "Immediate announcement", body: "Highest ratio " + pct(top) + " is above the 0.25% trigger and below 5%. Announce to Bursa immediately on entry; no shareholder approval, but the transaction consumes mandate headroom and enters the twelve-month aggregation window." };
+    return { key: "record", title: "Record only", body: "Highest ratio " + pct(top) + " is below every listing-rule trigger. Recorded in the register and the annual-report RPT schedule, and still counted towards aggregation — a later transaction with the same party can pull this one over a gate." };
+  }
+
+  download() {
+    const head = ["Ref", "Classification", "Counterparty", "Basis of relationship", "Transaction date", "Consideration", "Highest ratio", "Aggregated 12 mth", "Gate", "Decision", "Rule set", "Financial basis"];
+    const rows = this.state.cases.map(c => [c.ref, c.kind, c.party, c.rel, c.date, c.value, c.top, c.agg, c.gate, c.decided ? c.decisionLabel : "Open", c.ruleSet, c.basis]);
+    const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const tr = (cells, tag) => "<tr>" + cells.map(c => "<" + tag + ">" + esc(c) + "</" + tag + ">").join("") + "</tr>";
+    const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">'
+      + "<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>RPT Register</x:Name>"
+      + "<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->"
+      + "<style>td,th{font-family:Calibri,sans-serif;font-size:11pt;border:.5pt solid #bfbfbf;padding:3pt 5pt;vertical-align:top}th{background:#1d2d3d;color:#fff;font-weight:600}</style></head>"
+      + "<body><table>" + tr(head, "th") + rows.map(r => tr(r, "td")).join("") + "</table></body></html>";
+    const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rpt-register-" + new Date().toISOString().slice(0, 10) + ".xls";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  submit() {
+    const s = this.state, f = s.form, fin = this.fin();
+    const v = num(f.amount);
+    const known = s.parties.find(p => p.name.toLowerCase() === f.party.trim().toLowerCase());
+    const rs = this.ratios(v, fin).filter(r => r.r !== null);
+    const top = rs.length ? Math.max(...rs.map(r => r.r)) : null;
+    const gate = this.gateFor(top);
+    const prior = s.cases.filter(c => c.party.toLowerCase() === f.party.trim().toLowerCase()).reduce((t, c) => t + c.amount, 0);
+    const aggPct = fin.na ? (prior + v) / fin.na * 100 : null;
+    const ref = "RPT-" + new Date().getFullYear() + "-" + String(s.cases.length + 1).padStart(3, "0");
+    const id = rid("case_");
+    const basisLabel = fin.na ? (this.state.finFile ? this.state.finFile + " · unconfirmed" : "keyed manually · unconfirmed") : "none on file";
+    const dateLabel = f.date ? new Date(f.date + "T00:00:00").toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "not stated";
+    const gateTag = { circular: "tag tag-accent", announce: "tag tag-accent", record: "tag tag-neutral", none: "tag tag-outline" }[gate.key];
+    const gateShort = { circular: "5% · circular", announce: "0.25% · announce", record: "Below thresholds", none: "Basis required" }[gate.key];
+
+    const kase = {
+      id, ref, kind: f.kind, party: f.party.trim(), rel: known ? known.basis : (f.basis || "proposed, unstated"),
+      nature: f.nature.trim(), amount: v, value: fmt(v), date: dateLabel,
+      top: top === null ? "not computed" : pct(top), agg: aggPct === null ? "—" : pct(aggPct),
+      gate: gateShort, gateClass: gateTag, age: "just now",
+      title: f.nature.trim() + " — " + gate.title.toLowerCase(),
+      reason: gate.body + (prior > 0 ? " Aggregated with " + fmt(prior) + " of earlier transactions with this party inside the rolling twelve months." : ""),
+      ruleSet: RULE_SET, route: ROUTE, basis: basisLabel,
+      approveLabel: gate.key === "circular" ? "Escalate to circular" : gate.key === "announce" ? "Approve for announcement" : "Record as reviewed",
+      nextStep: gate.key === "circular" ? "Draft circular; appoint independent adviser" : gate.key === "announce" ? "Secretariat drafts the Bursa announcement" : "Recorded in the annual RPT schedule",
+      decided: false, decisionLabel: "", eventId: ""
+    };
+
+    const at = stamp(), ev = [];
+    const push = (type, detail, actor) => ev.push({ at, actor: actor || "Faridah · Finance", type, detail });
+    push("TransactionSubmitted", ref + " created. " + f.kind + ", nature: " + kase.nature + ", consideration " + fmt(v) + ", transaction date " + dateLabel + ".");
+    if (known) push("CounterpartyScreened", "Matched register party " + known.name + " — " + known.basis + ", effective " + known.from + ".", "system");
+    else push("PartyRelationProposed", "New party proposed: " + kase.party + " (" + f.partyType + "), basis: " + (f.basis || "unstated") + ". Unconfirmed until the secretariat accepts it.", "system");
+    if (top === null) push("MaterialityDeferred", "No usable financial basis. Evaluation deferred; the case cannot pass secretariat review until a financial period is supplied.", "system");
+    else push("MaterialityEvaluated", "Rule set " + RULE_SET + ". Highest ratio " + pct(top) + " → " + gate.title + ". Basis: " + basisLabel + ".", "system");
+    if (prior > 0 && aggPct !== null) push("AggregationRecomputed", "Rolling twelve-month total with this party: " + fmt(prior + v) + " = " + pct(aggPct) + " of net assets.", "system");
+
+    const parties = known ? s.parties.map(p => p === known ? Object.assign({}, p, { count: p.count + 1 }) : p)
+      : s.parties.concat([{ name: kase.party, type: f.partyType, basis: f.basis || "unstated", from: dateLabel, status: "Unconfirmed", statusClass: "tag tag-outline", count: 1 }]);
+
+    this.setState({
+      cases: s.cases.concat([kase]), parties, events: ev.concat(s.events),
+      tab: "alerts", selId: id, filter: "all", rationale: "", finFile: "",
+      form: Object.assign({}, EMPTY_FORM),
+      banner: ref + " submitted. " + (known ? "Counterparty matched in the register." : "A register entry has been proposed for " + kase.party + ".") + " " + (top === null ? "Materiality deferred — no financial basis." : gate.title + ".")
+    });
+  }
+
+  decide(label) {
+    const id = this.state.selId, at = stamp();
+    this.setState(s => ({
+      cases: s.cases.map(c => c.id === id ? Object.assign({}, c, { decided: true, decisionLabel: label, eventId: rid("evt_") }) : c),
+      events: [{ at, actor: "Nurul Aziz · Compliance", type: "DecisionRecorded", detail: label + (s.rationale ? " — " + s.rationale : "") + ". Rule set " + RULE_SET + " pinned at creation; the stored evaluation is unchanged." }].concat(s.events),
+      rationale: ""
+    }));
+  }
+
+  guidanceVals() {
+    const g = this.state.g;
+    const key = g.related === false ? "not"
+      : g.related === true && g.repeat === false ? "rpt"
+      : g.related === true && g.repeat === true && g.ordinary === false ? "rptRecurring"
+      : g.related === true && g.repeat === true && g.ordinary === true ? "rrpt"
+      : "none";
+    const v = VERDICTS[key];
+    const answered = g.related !== null;
+
+    const step = (n, q, answer, active, yesText, noText, setter, hint) => {
+      const on = active;
+      return {
+        n, q, hint,
+        opacity: on ? "1" : "0.4",
+        edge: on ? "var(--color-accent)" : "var(--color-divider)",
+        yesText, noText,
+        yesBg: answer === true ? "var(--color-accent-900)" : "transparent",
+        yesFg: answer === true ? "#fff" : "var(--color-text)",
+        noBg: answer === false ? "var(--color-accent-900)" : "transparent",
+        noFg: answer === false ? "#fff" : "var(--color-text)",
+        setYes: on ? setter(true) : () => {},
+        setNo: on ? setter(false) : () => {}
+      };
+    };
+    const setG = k => val => () => this.setState(st => {
+      const next = Object.assign({}, st.g, { [k]: val });
+      if (k === "related" && val === false) { next.repeat = null; next.ordinary = null; }
+      if (k === "repeat" && val === false) next.ordinary = null;
+      return { g: next, gExample: "" };
+    });
+
+    const steps = [
+      step("01", "Is the counterparty a related party?", g.related, true, "Yes — in the register", "No", setG("related"), "A director, major shareholder, a person connected to either, or an entity they control. Tested as at the transaction date."),
+      step("02", "Does it happen repeatedly?", g.repeat, g.related === true, "Yes — recurring", "No — one-off", setG("repeat"), "Recurrent means a continuing stream of like transactions with the same party, not a single contract paid in instalments."),
+      step("03", "Is it in the ordinary course of business?", g.ordinary, g.related === true && g.repeat === true, "Yes — trade activity", "No", setG("ordinary"), "The group's own trade, on commercial terms. Asset transfers, funding and advisory work are not ordinary course.")
+    ];
+
+    const terminals = [
+      { label: "Not RPT", on: g.related === false, reach: "No at question 1" },
+      { label: "RPT", on: key === "rpt" || key === "rptRecurring", reach: key === "rptRecurring" ? "Recurring, No at question 3" : "No at question 2" },
+      { label: "RRPT", on: key === "rrpt", reach: "Yes throughout" }
+    ].map(t => Object.assign({}, t, {
+      bg: t.on ? "var(--color-accent-900)" : "transparent",
+      fg: t.on ? "#fff" : "var(--color-neutral-600)",
+      bd: t.on ? "var(--color-accent-900)" : "var(--color-divider)"
+    }));
+
+    return {
+      gSteps: steps, gTerminals: terminals,
+      gVerdictLabel: v.label, gVerdictBody: v.body, gVerdictTag: v.tag,
+      gAnswered: answered, gHasVerdict: key !== "none",
+      gVerdictBg: key === "none" ? "transparent" : "var(--color-accent-100)",
+      gVerdictBd: key === "none" ? "var(--color-divider)" : "var(--color-accent)",
+      gReset: () => this.setState({ g: { related: null, repeat: null, ordinary: null }, gExample: "" }),
+      gExamples: EXAMPLES.map(x => Object.assign({}, x, {
+        bg: this.state.gExample === x.id ? "var(--color-accent-100)" : "transparent",
+        edge: this.state.gExample === x.id ? "var(--color-accent)" : "transparent"
+      })),
+      gRunExample: e => {
+        const x = EXAMPLES.find(y => y.id === e.currentTarget.dataset.id);
+        if (x) this.setState({ g: Object.assign({}, x.a), gExample: x.id });
+      },
+      gToIntake: () => this.setState(st => ({
+        tab: "intake",
+        form: Object.assign({}, st.form, {
+          kind: key === "rrpt" ? "Recurrent related party transaction"
+            : key === "rptRecurring" ? "Recurring transaction outside the RRPT mandate regime"
+            : "One-off related party transaction"
+        })
+      })),
+      gIntakeLabel: key === "rrpt" ? "Start Intake as recurrent (RRPT)"
+        : key === "rptRecurring" ? "Start Intake as recurring, approved individually"
+        : "Start Intake as one-off (RPT)",
+      gCanStart: key === "rpt" || key === "rptRecurring" || key === "rrpt"
+    };
+  }
+
+  renderVals() {
+    const s = this.state, f = s.form, fin = this.fin();
+    const set = k => e => { const v = e.currentTarget.value; this.setState(st => ({ form: Object.assign({}, st.form, { [k]: v }) })); };
+
+    const heads = {
+      alerts: ["Alerts & approvals", s.cases.length ? s.cases.filter(c => !c.decided).length + " open" : "nothing submitted yet"],
+      intake: ["New transaction", "screening runs as you type"],
+      register: ["Related party register", s.parties.length ? "effective-dated, queryable as at any date" : "no parties recorded"],
+      audit: ["Audit trail", "append-only event log"],
+      guidance: ["Guidance — RPT or RRPT", "decision flow, MMLR Chapter 10"]
+    };
+    const icons = {
+      alerts: "M10.268 21a2 2 0 0 0 3.464 0M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326",
+      intake: "M5 12h14M12 5v14",
+      register: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+      audit: "M12 8v4l3 2M3.05 11a9 9 0 1 1 .5 4M3 3v8h8",
+      guidance: "M6 3v12a3 3 0 0 0 3 3h6M18 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+    };
+    const labels = { alerts: "Alerts", intake: "Intake", register: "Register", audit: "Audit", guidance: "Guidance" };
+    const counts = { alerts: s.cases.length ? String(s.cases.filter(c => !c.decided).length) : "", intake: "", register: s.parties.length ? String(s.parties.length) : "", audit: s.events.length ? String(s.events.length) : "", guidance: "" };
+    const nav = ["alerts", "intake", "register", "audit", "guidance"].map(id => {
+      const on = s.tab === id;
+      return { id, label: labels[id], icon: icons[id], count: counts[id], bg: on ? "var(--color-accent-100)" : "transparent", fg: on ? "var(--color-accent-800)" : "var(--color-text)", edge: on ? "var(--color-accent)" : "transparent" };
+    });
+
+    const cases = s.cases.map(c => Object.assign({}, c, {
+      undecided: !c.decided,
+      bg: s.selId === c.id ? "var(--color-accent-100)" : "transparent",
+      edge: s.selId === c.id ? "var(--color-accent)" : "transparent"
+    }));
+    const openCount = cases.filter(c => !c.decided).length;
+    const filters = [
+      { id: "all", label: "All", count: String(cases.length) },
+      { id: "open", label: "Open", count: String(openCount) },
+      { id: "done", label: "Decided", count: String(cases.length - openCount) }
+    ].map(x => Object.assign({}, x, { bg: s.filter === x.id ? "var(--color-accent-100)" : "transparent", fg: s.filter === x.id ? "var(--color-accent-800)" : "var(--color-neutral-700)" }));
+    const visibleCases = cases.filter(c => s.filter === "all" || (s.filter === "open" ? !c.decided : c.decided));
+    const sel = cases.find(c => c.id === s.selId) || null;
+
+    const v = num(f.amount);
+    const rs = this.ratios(v, fin);
+    const usable = rs.filter(r => r.r !== null);
+    const top = usable.length ? Math.max(...usable.map(r => r.r)) : null;
+    const gate = this.gateFor(top);
+    const gateStyle = {
+      circular: { bg: "var(--color-accent-900)", fg: "#fff", bd: "var(--color-accent-900)" },
+      announce: { bg: "var(--color-accent-100)", fg: "var(--color-accent-900)", bd: "var(--color-accent)" },
+      record: { bg: "transparent", fg: "var(--color-text)", bd: "var(--color-divider)" },
+      none: { bg: "transparent", fg: "var(--color-text)", bd: "var(--color-divider)" }
+    }[gate.key];
+
+    const tests = rs.map(t => ({
+      label: t.label,
+      pct: t.r === null ? "—" : pct(t.r),
+      fg: t.r === null ? "var(--color-neutral-500)" : t.r >= 5 ? "var(--color-accent-900)" : t.r >= 0.25 ? "var(--color-accent-800)" : "var(--color-neutral-700)",
+      bar: "position:absolute;inset:0 auto 0 0;height:100%;display:block;width:" + (t.r === null ? 0 : Math.min(100, t.r / 8 * 100)).toFixed(1) + "%;background:" + (t.r !== null && t.r >= 5 ? "var(--color-accent-900)" : "var(--color-accent)") + ";"
+    }));
+
+    const known = f.party.trim() && s.parties.find(p => p.name.toLowerCase() === f.party.trim().toLowerCase());
+    const missing = [];
+    if (!f.party.trim()) missing.push("counterparty");
+    if (!f.nature.trim()) missing.push("nature");
+    if (!v) missing.push("consideration");
+    if (!known && f.party.trim() && !f.basis) missing.push("basis of relationship");
+
+    const writes = [
+      { op: "INSERT", table: "intake.rpt_case", note: "1 row, status submitted" },
+      { op: known ? "UPDATE" : "INSERT", table: "registry.party" + (known ? "_relation" : ""), note: known ? "usage counter only" : "1 party + 1 unconfirmed edge" },
+      { op: fin.na ? "INSERT" : "SKIP", table: "materiality.financial_period", note: fin.na ? "1 row, unconfirmed" : "no figures supplied" },
+      { op: top === null ? "SKIP" : "INSERT", table: "materiality.materiality_evaluation", note: top === null ? "deferred" : "ratios + gate, immutable" },
+      { op: "INSERT", table: "audit.event", note: (top === null ? 2 : 3) + " rows, hash-chained" }
+    ];
+
+    const q = s.query.trim().toLowerCase();
+    const parties = q ? s.parties.filter(p => (p.name + " " + p.basis + " " + p.type).toLowerCase().includes(q)) : s.parties;
+
+    return {
+      nav, filters, visibleCases, tests, writes, parties, events: s.events, bases: BASES, form: f,
+      entityName: "Entity not configured",
+      heading: heads[s.tab][0], headingNote: heads[s.tab][1],
+      isAlerts: s.tab === "alerts", isIntake: s.tab === "intake", isRegister: s.tab === "register", isAudit: s.tab === "audit", isGuidance: s.tab === "guidance",
+      go: e => this.setState({ tab: e.currentTarget.dataset.id }),
+      goIntake: () => this.setState({ tab: "intake" }),
+      setFilter: e => this.setState({ filter: e.currentTarget.dataset.id }),
+      openCase: e => this.setState({ selId: e.currentTarget.dataset.id }),
+      sel: sel || {}, hasSel: !!sel, noSel: !sel && s.cases.length > 0, noCases: s.cases.length === 0,
+      rationale: s.rationale,
+      setRationale: e => this.setState({ rationale: e.currentTarget.value }),
+      approve: () => this.decide(sel ? sel.approveLabel + " — recorded" : "Recorded"),
+      reject: () => this.decide("Rejected — returned to submitter"),
+      refer: () => this.decide("Returned for further information"),
+      undo: () => this.setState(st => ({ cases: st.cases.map(c => c.id === st.selId ? Object.assign({}, c, { decided: false, decisionLabel: "", eventId: "" }) : c) })),
+      banner: s.banner, dismiss: () => this.setState({ banner: "" }),
+      setParty: set("party"), setPartyType: set("partyType"), setBasis: set("basis"), setNature: set("nature"),
+      setDate: set("date"), setKind: set("kind"), setAmount: set("amount"),
+      setNA: set("na"), setTA: set("ta"), setPBT: set("pbt"), setCAP: set("cap"),
+      screenMatched: !!known,
+      screenNew: !!f.party.trim() && !known,
+      screenText: known ? known.name + " — " + known.basis + ", effective from " + known.from + ". " + (known.status === "Unconfirmed" ? "The edge is still unconfirmed, so the case will carry that caveat." : "Confirmed edge.") : "",
+      submitCase: () => this.submit(),
+      resetForm: () => this.setState({ form: Object.assign({}, EMPTY_FORM), finFile: "" }),
+      submitDisabled: missing.length > 0,
+      submitLabel: missing.length ? "Complete " + missing.length + " required field" + (missing.length > 1 ? "s" : "") : "Submit for secretariat review",
+      submitHint: missing.length ? "Still needed: " + missing.join(", ") + "." : (top === null ? "Will submit with materiality deferred — no financial basis on file." : "Will submit as: " + gate.title.toLowerCase() + "."),
+      uploadFin: e => {
+        const file = e.currentTarget.files && e.currentTarget.files[0];
+        if (!file) return;
+        this.setState(st => ({ finFile: file.name, form: Object.assign({}, st.form, { na: st.form.na || "", ta: st.form.ta || "", pbt: st.form.pbt || "", cap: st.form.cap || "" }) }));
+      },
+      finNote: s.finFile
+        ? s.finFile + " attached and hashed. Key the four figures below as they appear in the statements — extraction is assistive only, and nothing may cite them until the secretariat confirms the period (ADR-06)."
+        : "No financial basis on file. Upload the balance sheet and P&L, or key the figures, before materiality can be evaluated. Market capitalisation is in neither statement and must come from a price source.",
+      finBorder: fin.na ? "var(--color-accent)" : "var(--color-divider)",
+      finBg: fin.na ? "var(--color-accent-100)" : "transparent",
+      testsNote: fin.na || fin.cap || fin.pbt || fin.ta ? "Live, from rule set " + RULE_SET : "Awaiting denominators",
+      gateTitle: gate.title, gateBody: gate.body, gateBg: gateStyle.bg, gateFg: gateStyle.fg, gateBorder: gateStyle.bd,
+      query: s.query, setQuery: e => this.setState({ query: e.currentTarget.value }),
+      hasParties: parties.length > 0, noParties: parties.length === 0,
+      resultCount: s.parties.length ? parties.length + " of " + s.parties.length + " parties" : "",
+      registerEmptyTitle: s.parties.length ? "No match" : "Register is empty",
+      registerEmptyBody: s.parties.length
+        ? "No party matches that search. Clear the field to see all " + s.parties.length + " entries."
+        : "Parties enter the register two ways: proposed by a submitter during Intake, or declared by an employee in their annual COI declaration. Both are proposals a human confirms — nothing writes here directly.",
+      eventCount: s.events.length ? s.events.length + " events" : "0 events",
+      noEvents: s.events.length === 0,
+      events: s.events,
+      exportExcel: () => this.download(),
+      exportDisabled: s.cases.length === 0,
+      ...this.guidanceVals()
+    };
+  }
+}
+</script>
+</body>
+</html>
