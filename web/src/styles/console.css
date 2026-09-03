@@ -137,13 +137,22 @@ body { overflow: hidden; }
 .write-note { margin-left: auto; text-align: right; font-size: 11px; color: var(--color-neutral-700); }
 
 @media (max-width: 900px) {
+  /* Stacked layout: the whole pane scrolls as one (via .intake-body's own
+     overflow below) instead of each column scrolling independently within a
+     height the flex/grid parent no longer bounds — the min-height:0 +
+     overflow:auto pairing above only makes sense in the two-column layout. */
   .intake-body { grid-template-columns: 1fr; overflow: auto; }
-  .intake-form-col { border-right: 0; border-bottom: 1px solid var(--color-divider); }
+  .intake-form-col { border-right: 0; border-bottom: 1px solid var(--color-divider); min-height: auto; }
+  .intake-form-scroll { flex: none; overflow: visible; min-height: auto; }
+  .intake-side { overflow: visible; min-height: auto; }
 }
 
 @media (max-width: 560px) {
   .intake-row-2 { grid-template-columns: 1fr; }
-  .intake-submit-bar { position: sticky; bottom: 0; }
+  /* The stacked layout already scrolls as one page (see above), so a sticky
+     bar would float over the ratio panel that now sits below the form
+     instead of pinning to a form-only viewport as in the original design. */
+  .intake-submit-bar { position: static; }
 }
 
 /* — Register — */
@@ -187,14 +196,17 @@ body { overflow: hidden; }
 
 @media (max-width: 900px) {
   .guidance-body { grid-template-columns: 1fr; overflow: auto; }
-  .guidance-main { border-right: 0; border-bottom: 1px solid var(--color-divider); }
+  .guidance-main { border-right: 0; border-bottom: 1px solid var(--color-divider); overflow: visible; min-height: auto; }
+  .guidance-side { overflow: visible; min-height: auto; }
 }
 
 @media (max-width: 768px) {
   .rail { width: 64px; }
-  .rail-brand-name, .rail-brand-entity, .rail-item-label, .rail-footer { display: none; }
+  .rail-brand-name, .rail-brand-entity, .rail-item-label, .rail-footer, .rail-demo-badge { display: none; }
+  .rail-brand { padding: 12px 8px; }
   .rail-item { justify-content: center; padding: 12px; }
   .rail-item-count { display: none; }
   .alerts-body { flex-direction: column; overflow: auto; }
   .alerts-queue { width: 100%; border-right: 0; border-bottom: 1px solid var(--color-divider); }
+  .alerts-detail { flex: none; overflow: visible; min-height: auto; }
 }

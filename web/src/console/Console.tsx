@@ -81,7 +81,7 @@ export function Console() {
             <div className="rail-brand-name">RPT GOVERNANCE</div>
             <div className="rail-brand-entity">Demo Group Berhad</div>
             {import.meta.env.MODE === 'demo' && (
-              <span className="tag tag-outline" style={{ marginTop: 8 }}>
+              <span className="tag tag-outline rail-demo-badge" style={{ marginTop: 8 }}>
                 Static demo · mock data
               </span>
             )}
