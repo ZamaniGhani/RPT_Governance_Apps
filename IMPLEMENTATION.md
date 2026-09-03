@@ -37,6 +37,22 @@ npm run dev           # http://localhost:5173, proxies /api to :4000
 The console ships genuinely empty, per the brief — every case, party and event comes
 from Intake.
 
+### Static demo (no backend, no database)
+
+```
+cd web
+npm install
+npm run build:demo
+```
+
+Produces one self-contained file, `web/dist-demo/demo.html` — open it directly in a
+browser, no server needed. It's the same console UI and business logic (the ratio/gate
+engine, screening, decisions, audit chain) running against an in-memory store seeded
+with a handful of realistic cases instead of the real API, so `submitCase`/`decideCase`/
+etc. all behave like the real thing but nothing persists past a page reload. A "Static
+demo · mock data" badge under the logo marks it as such. `vite.demo.config.ts` builds it
+by aliasing `api/client.ts` to `api/mock.ts` — every component is unmodified.
+
 ## What maps to what
 
 **Database** (`server/migrations/`) implements exactly the schema in the design doc's

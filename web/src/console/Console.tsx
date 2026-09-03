@@ -80,6 +80,11 @@ export function Console() {
           <div className="rail-brand">
             <div className="rail-brand-name">RPT GOVERNANCE</div>
             <div className="rail-brand-entity">Demo Group Berhad</div>
+            {import.meta.env.MODE === 'demo' && (
+              <span className="tag tag-outline" style={{ marginTop: 8 }}>
+                Static demo · mock data
+              </span>
+            )}
           </div>
           <div className="rail-nav">
             {TABS.map((t) => (
@@ -110,17 +115,14 @@ export function Console() {
             <span className="tag tag-outline">{headNote}</span>
             <div className="panel-header-actions">
               {tab !== 'intake' && tab !== 'guidance' && (
-                <a
+                <button
                   className="btn btn-secondary"
-                  href={api.exportUrl()}
-                  aria-disabled={!cases?.length}
-                  onClick={(e) => {
-                    if (!cases?.length) e.preventDefault();
-                  }}
-                  style={{ minHeight: 38, opacity: cases?.length ? 1 : 0.45, pointerEvents: cases?.length ? 'auto' : 'none' }}
+                  disabled={!cases?.length}
+                  onClick={() => api.downloadExport()}
+                  style={{ minHeight: 38 }}
                 >
                   ↓ Export to Excel
-                </a>
+                </button>
               )}
               <span className="panel-user">Nurul Aziz · Compliance</span>
               <span className="panel-avatar">NA</span>

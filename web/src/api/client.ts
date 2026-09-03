@@ -56,5 +56,10 @@ export const api = {
       ruleSet: { version: string; effectiveFrom: string; thresholds: Thresholds };
     }>('/intake-meta', 'finance'),
   registryMeta: () => request<{ basisOptions: BasisOption[] }>('/registry-meta', 'finance'),
-  exportUrl: () => '/api/export/register.xls',
+  downloadExport: () => {
+    window.location.href = '/api/export/register.xls';
+  },
 };
+
+/** Shape the demo build's mock client (src/api/mock.ts) must match exactly. */
+export type Api = typeof api;
