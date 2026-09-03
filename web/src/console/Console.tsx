@@ -156,7 +156,7 @@ export function Console() {
               onSubmitted={handleSubmitted}
             />
           )}
-          {tab === 'register' && <Register />}
+          {tab === 'register' && <Register onChanged={refresh} />}
           {tab === 'audit' && <AuditTrail events={events} exportDisabled={!cases?.length} />}
           {tab === 'guidance' && (
             <Guidance

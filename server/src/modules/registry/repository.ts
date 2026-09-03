@@ -57,3 +57,25 @@ export async function confirmRelation(client: PoolClient, relationId: string, co
     [relationId, confirmedBy]
   );
 }
+
+/** Closes a relation as of now — the only way a party_relation edge ever leaves the active register (ADR: effective-dated, never deleted). */
+export async function closeRelation(client: PoolClient, relationId: string): Promise<void> {
+  await client.query(`update registry.party_relation set effective_to = now() where id = $1`, [relationId]);
+}
+
+export async function updatePartyFields(
+  client: PoolClient,
+  partyId: string,
+  input: { legalName?: string; kind?: PartyKind }
+): Promise<PartyRow> {
+  const result = await client.query<PartyRow>(
+    `update registry.party set legal_name = coalesce($2, legal_name), kind = coalesce($3, kind) where id = $1 returning *`,
+    [partyId, input.legalName?.trim() ?? null, input.kind ?? null]
+  );
+  return result.rows[0]!;
+}
+
+export async function getPartyById(db: Executor, partyId: string): Promise<PartyRow | null> {
+  const result = await db.query<PartyRow>('select * from registry.party where id = $1', [partyId]);
+  return result.rows[0] ?? null;
+}

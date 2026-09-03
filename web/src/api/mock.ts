@@ -88,12 +88,14 @@ interface Party {
   basis: string;
   effectiveFrom: string;
   confirmed: boolean;
+  /** Mirrors closing a party_relation's active edge in the real API — a "deleted" party is retired, not erased. */
+  retired: boolean;
 }
 
 const parties: Party[] = [
-  { id: rid('party_'), name: 'Sinar Logistics Sdn Bhd', type: 'Entity', basis: 'Spouse of a director', effectiveFrom: daysAgo(35), confirmed: false },
-  { id: rid('party_'), name: 'Tuah Advisory Partners', type: 'Entity', basis: 'Director in common', effectiveFrom: daysAgo(95), confirmed: true },
-  { id: rid('party_'), name: 'Farid bin Rahman', type: 'Person', basis: 'Major shareholder — 5% or more', effectiveFrom: daysAgo(210), confirmed: true },
+  { id: rid('party_'), name: 'Sinar Logistics Sdn Bhd', type: 'Entity', basis: 'Spouse of a director', effectiveFrom: daysAgo(35), confirmed: false, retired: false },
+  { id: rid('party_'), name: 'Tuah Advisory Partners', type: 'Entity', basis: 'Director in common', effectiveFrom: daysAgo(95), confirmed: true, retired: false },
+  { id: rid('party_'), name: 'Farid bin Rahman', type: 'Person', basis: 'Major shareholder — 5% or more', effectiveFrom: daysAgo(210), confirmed: true, retired: false },
 ];
 
 const documents = new Map<string, { filename: string }>();
@@ -246,7 +248,7 @@ let kase3 = createCase({
 kase3 = decide(kase3, daysAgo(56), 'approve', null);
 cases.push(kase3);
 
-const cempaka: Party = { id: rid('party_'), name: 'Cempaka Resources Bhd', type: 'Entity', basis: 'Associate of the group', effectiveFrom: daysAgo(2), confirmed: false };
+const cempaka: Party = { id: rid('party_'), name: 'Cempaka Resources Bhd', type: 'Entity', basis: 'Associate of the group', effectiveFrom: daysAgo(2), confirmed: false, retired: false };
 parties.push(cempaka);
 const kase4 = createCase({
   createdAt: daysAgo(2),
@@ -331,7 +333,7 @@ export const api: Api = {
     let party = parties.find((p) => p.name.toLowerCase() === name.toLowerCase());
     const isNewParty = !party;
     if (!party) {
-      party = { id: rid('party_'), name, type: payload.partyType, basis: payload.basisLabel ?? 'unstated', effectiveFrom: new Date().toISOString(), confirmed: false };
+      party = { id: rid('party_'), name, type: payload.partyType, basis: payload.basisLabel ?? 'unstated', effectiveFrom: new Date().toISOString(), confirmed: false, retired: false };
       parties.push(party);
     }
     const doc = payload.financialDocumentId ? documents.get(payload.financialDocumentId) : undefined;
@@ -378,11 +380,41 @@ export const api: Api = {
 
   listParties: (q: string) => {
     const needle = q.trim().toLowerCase();
-    const rows = parties
+    const active = parties.filter((p) => !p.retired);
+    const rows = active
       .filter((p) => !needle || `${p.name} ${p.basis} ${p.type}`.toLowerCase().includes(needle))
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(toPartyRow);
-    return delay({ totalParties: parties.length, parties: rows });
+    return delay({ totalParties: active.length, parties: rows });
+  },
+
+  createParty: (payload) => {
+    const name = payload.name.trim();
+    if (parties.some((p) => !p.retired && p.name.toLowerCase() === name.toLowerCase())) {
+      return Promise.reject(new Error(`${name} is already in the register`));
+    }
+    const party: Party = { id: rid('party_'), name, type: payload.type, basis: payload.basisLabel, effectiveFrom: new Date().toISOString(), confirmed: true, retired: false };
+    parties.push(party);
+    return delay(toPartyRow(party));
+  },
+
+  updateParty: (id, payload) => {
+    const party = parties.find((p) => p.id === id && !p.retired);
+    if (!party) return Promise.reject(new Error('Party not found'));
+    if (payload.name !== undefined) party.name = payload.name.trim();
+    if (payload.type !== undefined) party.type = payload.type;
+    if (payload.basisLabel !== undefined && payload.basisLabel !== party.basis) {
+      party.basis = payload.basisLabel;
+      party.effectiveFrom = new Date().toISOString();
+    }
+    return delay(toPartyRow(party));
+  },
+
+  deleteParty: (id) => {
+    const party = parties.find((p) => p.id === id && !p.retired);
+    if (!party) return Promise.reject(new Error('Party not found or already removed from the register'));
+    party.retired = true;
+    return delay(undefined);
   },
 
   listEvents: () =>

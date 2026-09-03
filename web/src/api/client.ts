@@ -2,10 +2,12 @@ import type {
   AuditEvent,
   BasisOption,
   CaseSummary,
+  CreatePartyPayload,
   KindOption,
   PartyRow,
   SubmitCasePayload,
   Thresholds,
+  UpdatePartyPayload,
   UploadedDocument,
 } from './types';
 
@@ -48,6 +50,11 @@ export const api = {
     return request<UploadedDocument>('/documents', 'finance', { method: 'POST', body: form });
   },
   listParties: (q: string) => request<{ totalParties: number; parties: PartyRow[] }>(`/parties?q=${encodeURIComponent(q)}`, 'compliance'),
+  createParty: (payload: CreatePartyPayload) =>
+    request<PartyRow>('/parties', 'compliance', { method: 'POST', body: JSON.stringify(payload) }),
+  updateParty: (id: string, payload: UpdatePartyPayload) =>
+    request<PartyRow>(`/parties/${id}`, 'compliance', { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteParty: (id: string) => request<void>(`/parties/${id}`, 'compliance', { method: 'DELETE' }),
   listEvents: () => request<AuditEvent[]>('/events', 'compliance'),
   intakeMeta: () =>
     request<{

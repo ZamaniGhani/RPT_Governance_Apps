@@ -92,6 +92,19 @@ fills the viewport, matching what "responsive web" (the brief's own answer) mean
 production. Below ~560px, two-column field rows stack to one column and the Intake
 submit bar sticks to the bottom of the scroll area, matching the design's 1b behavior.
 
+**Register is full CRUD**, beyond what the original design specified (which only had
+Intake propose entries for the secretariat to confirm). "Add party" creates a
+register row directly, already confirmed — the secretariat administering the register
+is a different, more trusted path than Intake's screening proposals. Editing a party's
+basis of relationship still goes through `POST /api/parties`'s effective-dating rule
+(close the old edge, open a new one), never an in-place update — the DB trigger would
+reject that anyway. "Delete" retires the party's active relation (closes it) rather
+than deleting rows: `registry.party_relation` is append-only by design, and a past
+case keeps a foreign key to the exact relation it was judged against, so a literal
+delete would either be rejected by the trigger or invalidate history. Retiring drops
+the party off the active register immediately without touching anything a decision
+depends on.
+
 ## Deliberately out of scope
 
 Called out here so it isn't mistaken for an oversight — none of this was asked for by

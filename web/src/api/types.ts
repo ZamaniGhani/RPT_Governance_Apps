@@ -62,6 +62,18 @@ export interface PartyRow {
   rptCount: number;
 }
 
+export interface CreatePartyPayload {
+  name: string;
+  type: 'Person' | 'Entity';
+  basisLabel: string;
+}
+
+export interface UpdatePartyPayload {
+  name?: string;
+  type?: 'Person' | 'Entity';
+  basisLabel?: string;
+}
+
 export interface AuditEvent {
   id: string;
   at: string;
