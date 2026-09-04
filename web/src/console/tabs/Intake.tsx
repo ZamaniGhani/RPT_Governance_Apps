@@ -44,12 +44,14 @@ export function Intake({
   ruleSet,
   prefillKind,
   onSubmitted,
+  canSubmit,
 }: {
   kindOptions: KindOption[];
   basisOptions: BasisOption[];
   ruleSet: { version: string; effectiveFrom: string; thresholds: Thresholds } | null;
   prefillKind: CaseKind | null;
   onSubmitted: (ref: string, note: string) => void;
+  canSubmit: boolean;
 }) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
@@ -167,6 +169,21 @@ export function Intake({
     { op: top === null ? 'SKIP' : 'INSERT', table: 'materiality.materiality_evaluation', note: top === null ? 'deferred' : 'ratios + gate, immutable' },
     { op: 'INSERT', table: 'audit.event', note: `${top === null ? 2 : 3} rows, hash-chained` },
   ];
+
+  if (!canSubmit) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'flex-start', padding: 24 }}>
+        <Blueprint style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 16, maxWidth: 480 }}>
+          <span className="kicker">Finance access required</span>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
+            Submitting a related party transaction is restricted to the Finance department, so that every case in the
+            queue can be traced to who typed it in. Ask a Finance user to submit this transaction, or sign in with a
+            Finance account.
+          </p>
+        </Blueprint>
+      </div>
+    );
+  }
 
   return (
     <div className="intake-body">

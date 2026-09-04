@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { pool, withTransaction } from '../../db.js';
 import { actorFromRequest } from '../../shared/actor.js';
+import { requireDepartment } from '../auth/index.js';
 import { HttpError } from '../../shared/httpError.js';
 import { KIND_OPTIONS, ROUTE_VERSION } from './types.js';
 import { insertDocument } from './repository.js';
@@ -70,7 +71,7 @@ intakeRouter.get('/cases/:id', async (req, res, next) => {
   }
 });
 
-intakeRouter.post('/cases', async (req, res, next) => {
+intakeRouter.post('/cases', requireDepartment('finance'), async (req, res, next) => {
   try {
     const input = submitSchema.parse(req.body);
     const actor = actorFromRequest(req);
@@ -101,7 +102,7 @@ const decisionSchema = z.object({
   rationale: z.string().trim().nullable().optional(),
 });
 
-intakeRouter.post('/cases/:id/decision', async (req, res, next) => {
+intakeRouter.post('/cases/:id/decision', requireDepartment('compliance'), async (req, res, next) => {
   try {
     const body = decisionSchema.parse(req.body);
     const actor = actorFromRequest(req);
@@ -113,7 +114,7 @@ intakeRouter.post('/cases/:id/decision', async (req, res, next) => {
   }
 });
 
-intakeRouter.post('/cases/:id/reopen', async (req, res, next) => {
+intakeRouter.post('/cases/:id/reopen', requireDepartment('compliance'), async (req, res, next) => {
   try {
     const actor = actorFromRequest(req);
     await reopenCase(req.params.id!, actor);
@@ -123,7 +124,7 @@ intakeRouter.post('/cases/:id/reopen', async (req, res, next) => {
   }
 });
 
-intakeRouter.post('/documents', upload.single('file'), async (req, res, next) => {
+intakeRouter.post('/documents', requireDepartment('finance'), upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) throw new HttpError(422, 'No file attached');
     const actor = actorFromRequest(req);

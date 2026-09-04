@@ -12,7 +12,7 @@ interface PartyForm {
 
 const EMPTY_FORM: PartyForm = { name: '', type: 'Entity', basisLabel: '' };
 
-export function Register({ onChanged }: { onChanged?: () => void }) {
+export function Register({ onChanged, canAdminister }: { onChanged?: () => void; canAdminister: boolean }) {
   const [query, setQuery] = useState('');
   const [parties, setParties] = useState<PartyRow[] | null>(null);
   const [totalParties, setTotalParties] = useState(0);
@@ -124,14 +124,18 @@ export function Register({ onChanged }: { onChanged?: () => void }) {
           <input className="input" id="q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, entity or basis of relationship" />
         </div>
         <span className="register-count">{resultCount}</span>
-        <button className="btn btn-secondary" style={{ minHeight: 38 }} onClick={startCreate} disabled={creating}>
-          + Add party
-        </button>
+        {canAdminister ? (
+          <button className="btn btn-secondary" style={{ minHeight: 38 }} onClick={startCreate} disabled={creating}>
+            + Add party
+          </button>
+        ) : (
+          <span className="tag tag-outline">Read-only · Secretariat access required to edit</span>
+        )}
       </div>
 
       {error && <p style={{ margin: '10px 24px 0', fontSize: 12, color: 'var(--color-accent-900)' }}>{error}</p>}
 
-      {creating && (
+      {canAdminister && creating && (
         <Blueprint style={{ margin: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 10, padding: 14 }}>
           <span className="kicker">New register entry</span>
           <div className="intake-row-2">
@@ -180,12 +184,12 @@ export function Register({ onChanged }: { onChanged?: () => void }) {
                 <th style={{ textAlign: 'left' }}>Effective from</th>
                 <th style={{ textAlign: 'left' }}>Status</th>
                 <th style={{ textAlign: 'right' }}>RPTs</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                {canAdminister && <th style={{ textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
               {parties.map((p) =>
-                editingId === p.id ? (
+                canAdminister && editingId === p.id ? (
                   <tr key={p.id}>
                     <td>
                       <input className="input" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} style={{ minHeight: 32 }} />
@@ -233,14 +237,16 @@ export function Register({ onChanged }: { onChanged?: () => void }) {
                       <span className={p.status === 'Confirmed' ? 'tag tag-accent' : 'tag tag-outline'}>{p.status}</span>
                     </td>
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12.5 }}>{p.rptCount}</td>
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button className="btn btn-ghost" disabled={busy} onClick={() => startEdit(p)} style={{ minHeight: 30 }}>
-                        Edit
-                      </button>
-                      <button className="btn btn-ghost" disabled={busy} onClick={() => removeParty(p)} style={{ minHeight: 30 }}>
-                        Delete
-                      </button>
-                    </td>
+                    {canAdminister && (
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button className="btn btn-ghost" disabled={busy} onClick={() => startEdit(p)} style={{ minHeight: 30 }}>
+                          Edit
+                        </button>
+                        <button className="btn btn-ghost" disabled={busy} onClick={() => removeParty(p)} style={{ minHeight: 30 }}>
+                          Delete
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 )
               )}

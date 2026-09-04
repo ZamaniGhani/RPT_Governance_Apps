@@ -1,3 +1,12 @@
+export type Department = 'finance' | 'compliance' | 'secretariat' | 'admin';
+
+export interface CurrentUser {
+  username: string;
+  displayName: string;
+  department: Department;
+  departmentLabel: string;
+}
+
 export type CaseKind = 'rpt_one_off' | 'rrpt' | 'rpt_recurring_non_ordinary';
 
 export interface KindOption {

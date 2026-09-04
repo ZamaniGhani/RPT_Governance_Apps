@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api } from '../api/client';
-import type { AuditEvent, BasisOption, CaseKind, CaseSummary, KindOption, Thresholds } from '../api/types';
+import { api, UnauthorizedError } from '../api/client';
+import type { AuditEvent, BasisOption, CaseKind, CaseSummary, CurrentUser, KindOption, Thresholds } from '../api/types';
 import { Icon } from '../components/Icon';
 import { Alerts } from './tabs/Alerts';
 import { Intake } from './tabs/Intake';
@@ -9,6 +9,11 @@ import { AuditTrail } from './tabs/AuditTrail';
 import { Guidance } from './tabs/Guidance';
 
 export type TabId = 'alerts' | 'intake' | 'register' | 'audit' | 'guidance';
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+}
 
 const TABS: { id: TabId; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
   { id: 'alerts', label: 'Alerts', icon: 'alerts' },
@@ -26,7 +31,8 @@ const HEADS: Record<TabId, [string, (ctx: { openCount: number; hasCases: boolean
   guidance: ['Guidance — RPT or RRPT', () => 'decision flow, MMLR Chapter 10'],
 };
 
-export function Console() {
+export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut: () => void }) {
+  const canUse = useCallback((...departments: CurrentUser['department'][]) => user.department === 'admin' || departments.includes(user.department), [user.department]);
   const [tab, setTab] = useState<TabId>('alerts');
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
@@ -39,11 +45,16 @@ export function Console() {
   const [prefillKind, setPrefillKind] = useState<CaseKind | null>(null);
 
   const refresh = useCallback(async () => {
-    const [caseRows, eventRows, parties] = await Promise.all([api.listCases(), api.listEvents(), api.listParties('')]);
-    setCases(caseRows);
-    setEvents(eventRows);
-    setTotalParties(parties.totalParties);
-  }, []);
+    try {
+      const [caseRows, eventRows, parties] = await Promise.all([api.listCases(), api.listEvents(), api.listParties('')]);
+      setCases(caseRows);
+      setEvents(eventRows);
+      setTotalParties(parties.totalParties);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onSignedOut();
+      else throw err;
+    }
+  }, [onSignedOut]);
 
   useEffect(() => {
     refresh();
@@ -124,8 +135,15 @@ export function Console() {
                   ↓ Export to Excel
                 </button>
               )}
-              <span className="panel-user">Nurul Aziz · Compliance</span>
-              <span className="panel-avatar">NA</span>
+              <span className="panel-user">
+                {user.displayName} · {user.departmentLabel}
+              </span>
+              <span className="panel-avatar" title={`${user.displayName} · ${user.departmentLabel}`}>
+                {initials(user.displayName)}
+              </span>
+              <button className="btn btn-ghost" style={{ minHeight: 34 }} onClick={onSignedOut}>
+                Sign out
+              </button>
             </div>
           </div>
 
@@ -145,6 +163,7 @@ export function Console() {
               onSelect={setSelId}
               onGoIntake={() => setTab('intake')}
               onChanged={refresh}
+              canDecide={canUse('compliance')}
             />
           )}
           {tab === 'intake' && (
@@ -154,9 +173,10 @@ export function Console() {
               ruleSet={ruleSet}
               prefillKind={prefillKind}
               onSubmitted={handleSubmitted}
+              canSubmit={canUse('finance')}
             />
           )}
-          {tab === 'register' && <Register onChanged={refresh} />}
+          {tab === 'register' && <Register onChanged={refresh} canAdminister={canUse('secretariat')} />}
           {tab === 'audit' && <AuditTrail events={events} exportDisabled={!cases?.length} />}
           {tab === 'guidance' && (
             <Guidance

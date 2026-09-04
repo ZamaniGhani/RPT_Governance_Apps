@@ -26,12 +26,14 @@ export function Alerts({
   onSelect,
   onGoIntake,
   onChanged,
+  canDecide,
 }: {
   cases: CaseSummary[] | null;
   selId: string | null;
   onSelect: (id: string) => void;
   onGoIntake: () => void;
   onChanged: () => Promise<void>;
+  canDecide: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [rationale, setRationale] = useState('');
@@ -211,11 +213,13 @@ export function Alerts({
                   <span style={{ color: 'var(--color-neutral-700)' }}>Next step</span>
                   <span>{nextStep}</span>
                 </div>
-                <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', paddingLeft: 0 }} disabled={busy} onClick={reopen}>
-                  Reopen case
-                </button>
+                {canDecide && (
+                  <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', paddingLeft: 0 }} disabled={busy} onClick={reopen}>
+                    Reopen case
+                  </button>
+                )}
               </Blueprint>
-            ) : (
+            ) : canDecide ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="field">
                   <label htmlFor="rationale">Rationale for the record</label>
@@ -243,6 +247,13 @@ export function Alerts({
                   Interested parties are excluded from a case automatically; quorum is recomputed without them.
                 </p>
               </div>
+            ) : (
+              <Blueprint style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 13 }}>
+                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 14 }}>Decisions require Compliance access</span>
+                <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--color-neutral-700)' }}>
+                  Your account can view this case's evaluation but not approve, reject or reopen it.
+                </span>
+              </Blueprint>
             )}
           </div>
         ) : cases.length > 0 ? (

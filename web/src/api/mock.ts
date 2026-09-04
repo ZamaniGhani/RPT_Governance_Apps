@@ -1,10 +1,16 @@
 import type { Api } from './client';
+import { UnauthorizedError } from './client';
+// Re-exported so App.tsx's `import { UnauthorizedError } from '../api/client'`
+// resolves correctly once the demo build aliases that path to this file.
+export { UnauthorizedError };
 import { computeRatios, gateFor, topRatio } from '../lib/materiality';
 import type {
   AuditEvent,
   BasisOption,
   CaseKind,
   CaseSummary,
+  CurrentUser,
+  Department,
   Gate,
   KindOption,
   PartyRow,
@@ -40,6 +46,15 @@ const BASIS_OPTIONS: BasisOption[] = [
   { code: 'control', label: 'Controlled by a director or major shareholder' },
   { code: 'associate', label: 'Associate of the group' },
 ];
+
+// Same dummy credential as the real backend's seeded account, so the login
+// screen behaves identically in both builds. There's no real security here —
+// the whole demo is client-side, same as everything else in this file.
+const DEPARTMENT_LABEL: Record<Department, string> = { finance: 'Finance', compliance: 'Compliance', secretariat: 'Secretariat', admin: 'Admin' };
+const MOCK_ACCOUNTS: { username: string; password: string; displayName: string; department: Department }[] = [
+  { username: 'admin', password: 'Admin@2026', displayName: 'System Administrator', department: 'admin' },
+];
+let currentUser: CurrentUser | null = null;
 
 const APPROVE_LABEL_BY_GATE: Record<string, string> = {
   circular: 'Escalate to circular',
@@ -183,6 +198,17 @@ function createCase(input: {
   return kase;
 }
 
+function currentActorLabel(): string {
+  return currentUser ? `${currentUser.displayName} · ${DEPARTMENT_LABEL[currentUser.department]}` : 'system';
+}
+
+function requireDepartment(...departments: Department[]): void {
+  if (!currentUser) throw new UnauthorizedError('Sign in required');
+  if (currentUser.department !== 'admin' && !departments.includes(currentUser.department)) {
+    throw new Error(`This action needs the ${departments.join(' or ')} department`);
+  }
+}
+
 function decide(kase: CaseSummary, at: string, decisionKey: 'approve' | 'reject' | 'refer', rationale: string | null): CaseSummary {
   const gateKey = kase.evaluation?.gate.key ?? 'none';
   const label =
@@ -191,7 +217,7 @@ function decide(kase: CaseSummary, at: string, decisionKey: 'approve' | 'reject'
       : decisionKey === 'reject'
         ? 'Rejected — returned to submitter'
         : 'Returned for further information';
-  const actor = 'Nurul Aziz · Compliance';
+  const actor = currentActorLabel();
   pushEvent(kase.id, at, actor, 'DecisionRecorded', `${label}${rationale ? ` — ${rationale}` : ''}.`);
   return { ...kase, status: 'decided', decision: { id: rid('decision_'), label, rationale, decidedAt: at, actor } };
 }
@@ -320,6 +346,28 @@ function downloadExport() {
 const delay = <T,>(value: T) => new Promise<T>((resolve) => setTimeout(() => resolve(value), 220));
 
 export const api: Api = {
+  login: (username, password) => {
+    const found = MOCK_ACCOUNTS.find((a) => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password);
+    const at = new Date().toISOString();
+    if (!found) {
+      pushEvent(username.trim() || 'unknown', at, 'system', 'LoginFailed', `Failed login attempt for username "${username.trim()}".`);
+      return Promise.reject(new Error('Incorrect username or password'));
+    }
+    currentUser = { username: found.username, displayName: found.displayName, department: found.department, departmentLabel: DEPARTMENT_LABEL[found.department] };
+    pushEvent(found.username, at, currentActorLabel(), 'LoginSucceeded', `${found.displayName} (${DEPARTMENT_LABEL[found.department]}) signed in.`);
+    return delay(currentUser);
+  },
+
+  logout: () => {
+    if (currentUser) {
+      pushEvent(currentUser.username, new Date().toISOString(), currentActorLabel(), 'LoggedOut', `${currentUser.displayName} (${currentUser.departmentLabel}) signed out.`);
+    }
+    currentUser = null;
+    return delay(undefined);
+  },
+
+  me: () => (currentUser ? delay(currentUser) : Promise.reject(new UnauthorizedError('Sign in required'))),
+
   listCases: () => delay([...cases].sort(byCreatedDesc)),
 
   getCase: (id) => {
@@ -329,6 +377,7 @@ export const api: Api = {
   },
 
   submitCase: (payload: SubmitCasePayload) => {
+    requireDepartment('finance');
     const name = payload.party.trim();
     let party = parties.find((p) => p.name.toLowerCase() === name.toLowerCase());
     const isNewParty = !party;
@@ -347,7 +396,7 @@ export const api: Api = {
       nature: payload.nature,
       considerationMyr: payload.considerationMyr,
       transactionDate: payload.transactionDate,
-      submittedBy: 'Faridah · Finance',
+      submittedBy: currentActorLabel(),
       financials: payload.financials,
       financialLabel: hasFinancials ? (doc ? doc.filename : 'keyed manually') : null,
       financialConfirmed: false,
@@ -357,6 +406,7 @@ export const api: Api = {
   },
 
   decideCase: (id, decision, rationale) => {
+    requireDepartment('compliance');
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return Promise.reject(new Error('Case not found'));
     cases[idx] = decide(cases[idx]!, new Date().toISOString(), decision, rationale);
@@ -364,9 +414,10 @@ export const api: Api = {
   },
 
   reopenCase: (id) => {
+    requireDepartment('compliance');
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return Promise.reject(new Error('Case not found'));
-    pushEvent(id, new Date().toISOString(), 'Nurul Aziz · Compliance', 'CaseReopened', 'Case reopened for further review.');
+    pushEvent(id, new Date().toISOString(), currentActorLabel(), 'CaseReopened', 'Case reopened for further review.');
     cases[idx] = { ...cases[idx]!, status: 'open', decision: null };
     return delay(cases[idx]!);
   },
@@ -389,6 +440,7 @@ export const api: Api = {
   },
 
   createParty: (payload) => {
+    requireDepartment('secretariat');
     const name = payload.name.trim();
     if (parties.some((p) => !p.retired && p.name.toLowerCase() === name.toLowerCase())) {
       return Promise.reject(new Error(`${name} is already in the register`));
@@ -399,6 +451,7 @@ export const api: Api = {
   },
 
   updateParty: (id, payload) => {
+    requireDepartment('secretariat');
     const party = parties.find((p) => p.id === id && !p.retired);
     if (!party) return Promise.reject(new Error('Party not found'));
     if (payload.name !== undefined) party.name = payload.name.trim();
@@ -411,6 +464,7 @@ export const api: Api = {
   },
 
   deleteParty: (id) => {
+    requireDepartment('secretariat');
     const party = parties.find((p) => p.id === id && !p.retired);
     if (!party) return Promise.reject(new Error('Party not found or already removed from the register'));
     party.retired = true;

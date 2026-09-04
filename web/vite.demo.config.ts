@@ -17,7 +17,7 @@ export default defineConfig({
     // Regex aliases are substituted via String.replace(find, replacement), which
     // only swaps the matched span — so `find` must match the whole specifier
     // (anchored) or the leading "../"/"../../" survives and mangles the path.
-    alias: [{ find: /^(\.\.\/)+api\/client$/, replacement: path.resolve(import.meta.dirname, 'src/api/mock.ts') }],
+    alias: [{ find: /^(\.\.?\/)+api\/client$/, replacement: path.resolve(import.meta.dirname, 'src/api/mock.ts') }],
   },
   build: {
     outDir: 'dist-demo',

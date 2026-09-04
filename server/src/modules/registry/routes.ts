@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { pool, withTransaction } from '../../db.js';
 import { actorFromRequest, actorLabel } from '../../shared/actor.js';
+import { requireDepartment } from '../auth/index.js';
 import { HttpError } from '../../shared/httpError.js';
 import { closeRelation, createParty, createRelation, findActiveRelation, findPartyByName, getPartyById, updatePartyFields } from './repository.js';
 import { BASIS_OPTIONS, basisCodeForLabel } from './types.js';
@@ -74,7 +75,7 @@ const createSchema = z.object({
 // Create: the secretariat entering a register row directly. Unlike Intake's
 // proposals, a party added here is confirmed immediately — this *is* the
 // register's own administrator, not a submitter's guess about it.
-registryRouter.post('/parties', async (req, res, next) => {
+registryRouter.post('/parties', requireDepartment('secretariat'), async (req, res, next) => {
   try {
     const input = createSchema.parse(req.body);
     const actor = actorFromRequest(req);
@@ -109,7 +110,7 @@ const updateSchema = z.object({
 // of relationship is effective-dated like everywhere else — the current edge
 // is closed and a new, already-confirmed one takes its place, never edited
 // in place.
-registryRouter.patch('/parties/:id', async (req, res, next) => {
+registryRouter.patch('/parties/:id', requireDepartment('secretariat'), async (req, res, next) => {
   try {
     const input = updateSchema.parse(req.body);
     const actor = actorFromRequest(req);
@@ -154,7 +155,7 @@ registryRouter.patch('/parties/:id', async (req, res, next) => {
 // means what it safely can: retire the edge (close it as of now), which
 // drops the party off the active register immediately without touching any
 // row a past decision depends on.
-registryRouter.delete('/parties/:id', async (req, res, next) => {
+registryRouter.delete('/parties/:id', requireDepartment('secretariat'), async (req, res, next) => {
   try {
     const partyId = req.params.id!;
     await withTransaction(async (client) => {

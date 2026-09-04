@@ -3,6 +3,7 @@ import type {
   BasisOption,
   CaseSummary,
   CreatePartyPayload,
+  CurrentUser,
   KindOption,
   PartyRow,
   SubmitCasePayload,
@@ -11,19 +12,20 @@ import type {
   UploadedDocument,
 } from './types';
 
-export type Actor = 'finance' | 'compliance';
+export class UnauthorizedError extends Error {}
 
-async function request<T>(path: string, actor: Actor, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     ...init,
+    credentials: 'include',
     headers: {
       ...(init?.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-      'x-actor': actor,
       ...init?.headers,
     },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
+    if (res.status === 401) throw new UnauthorizedError(body.error ?? 'Sign in required');
     throw new Error(body.error ?? `Request failed: ${res.status}`);
   }
   if (res.status === 204) return undefined as T;
@@ -31,38 +33,36 @@ async function request<T>(path: string, actor: Actor, init?: RequestInit): Promi
 }
 
 export const api = {
-  listCases: () => request<CaseSummary[]>('/cases', 'compliance'),
-  getCase: (id: string) => request<CaseSummary>(`/cases/${id}`, 'compliance'),
+  login: (username: string, password: string) =>
+    request<CurrentUser>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  logout: () => request<void>('/auth/logout', { method: 'POST' }),
+  me: () => request<CurrentUser>('/auth/me'),
+
+  listCases: () => request<CaseSummary[]>('/cases'),
+  getCase: (id: string) => request<CaseSummary>(`/cases/${id}`),
   submitCase: (payload: SubmitCasePayload) =>
-    request<{ case: CaseSummary; isNewParty: boolean }>('/cases', 'finance', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    request<{ case: CaseSummary; isNewParty: boolean }>('/cases', { method: 'POST', body: JSON.stringify(payload) }),
   decideCase: (id: string, decision: 'approve' | 'reject' | 'refer', rationale: string | null) =>
-    request<CaseSummary>(`/cases/${id}/decision`, 'compliance', {
-      method: 'POST',
-      body: JSON.stringify({ decision, rationale }),
-    }),
-  reopenCase: (id: string) => request<CaseSummary>(`/cases/${id}/reopen`, 'compliance', { method: 'POST' }),
+    request<CaseSummary>(`/cases/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, rationale }) }),
+  reopenCase: (id: string) => request<CaseSummary>(`/cases/${id}/reopen`, { method: 'POST' }),
   uploadDocument: (file: File) => {
     const form = new FormData();
     form.append('file', file);
-    return request<UploadedDocument>('/documents', 'finance', { method: 'POST', body: form });
+    return request<UploadedDocument>('/documents', { method: 'POST', body: form });
   },
-  listParties: (q: string) => request<{ totalParties: number; parties: PartyRow[] }>(`/parties?q=${encodeURIComponent(q)}`, 'compliance'),
-  createParty: (payload: CreatePartyPayload) =>
-    request<PartyRow>('/parties', 'compliance', { method: 'POST', body: JSON.stringify(payload) }),
+  listParties: (q: string) => request<{ totalParties: number; parties: PartyRow[] }>(`/parties?q=${encodeURIComponent(q)}`),
+  createParty: (payload: CreatePartyPayload) => request<PartyRow>('/parties', { method: 'POST', body: JSON.stringify(payload) }),
   updateParty: (id: string, payload: UpdatePartyPayload) =>
-    request<PartyRow>(`/parties/${id}`, 'compliance', { method: 'PATCH', body: JSON.stringify(payload) }),
-  deleteParty: (id: string) => request<void>(`/parties/${id}`, 'compliance', { method: 'DELETE' }),
-  listEvents: () => request<AuditEvent[]>('/events', 'compliance'),
+    request<PartyRow>(`/parties/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteParty: (id: string) => request<void>(`/parties/${id}`, { method: 'DELETE' }),
+  listEvents: () => request<AuditEvent[]>('/events'),
   intakeMeta: () =>
     request<{
       kindOptions: KindOption[];
       routeVersion: string;
       ruleSet: { version: string; effectiveFrom: string; thresholds: Thresholds };
-    }>('/intake-meta', 'finance'),
-  registryMeta: () => request<{ basisOptions: BasisOption[] }>('/registry-meta', 'finance'),
+    }>('/intake-meta'),
+  registryMeta: () => request<{ basisOptions: BasisOption[] }>('/registry-meta'),
   downloadExport: () => {
     window.location.href = '/api/export/register.xls';
   },

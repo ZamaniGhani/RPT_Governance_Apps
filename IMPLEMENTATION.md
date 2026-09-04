@@ -35,7 +35,18 @@ npm run dev           # http://localhost:5173, proxies /api to :4000
 ```
 
 The console ships genuinely empty, per the brief — every case, party and event comes
-from Intake.
+from Intake. Sign in with the seeded dummy account:
+
+```
+username: admin
+password: Admin@2026
+```
+
+This account's department is `admin`, which bypasses every department check below —
+it's a placeholder for initial testing, not a real user. Add real accounts by inserting
+into `auth.account` directly (`password_hash` is bcrypt — hash with
+`node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"` from
+`server/`) until there's a UI for it.
 
 ### Static demo (no backend, no database)
 
@@ -51,7 +62,44 @@ engine, screening, decisions, audit chain) running against an in-memory store se
 with a handful of realistic cases instead of the real API, so `submitCase`/`decideCase`/
 etc. all behave like the real thing but nothing persists past a page reload. A "Static
 demo · mock data" badge under the logo marks it as such. `vite.demo.config.ts` builds it
-by aliasing `api/client.ts` to `api/mock.ts` — every component is unmodified.
+by aliasing `api/client.ts` to `api/mock.ts` — every component is unmodified. The same
+`admin` / `Admin@2026` credential signs in here too, checked client-side against a
+hardcoded account list in `mock.ts` — there is no real security in the demo build, same
+as everywhere else in that file.
+
+## Login and department access control
+
+There's a real login now: `auth.account` (bcrypt password hashes) and `auth.session`
+(opaque tokens in an httpOnly cookie, 12-hour expiry) in a new `auth` schema. Every
+mutating route is behind `requireAuth`, and `shared/actor.ts` — which every module
+already called to attribute writes and audit events — now derives the `Actor` from the
+signed-in session's account instead of a client-supplied header. That one seam meant no
+other module's code changed: `actorFromRequest(req)` still returns the same
+`{id, role}` shape, it just no longer trusts the caller to say who they are.
+
+Four departments gate specific actions (`requireDepartment` middleware; `admin` bypasses
+all of them):
+
+| Department | Can do |
+| --- | --- |
+| `finance` | Submit a transaction in Intake, upload financial documents |
+| `compliance` | Approve / reject / refer / reopen a case in Alerts |
+| `secretariat` | Create, edit or remove a Register entry |
+| `admin` | All of the above — for initial setup, not day-to-day use |
+
+The frontend mirrors this visibly rather than only failing silently on the server:
+Intake shows a blocking notice instead of the form for a non-Finance account, Alerts
+shows the case's evaluation but hides the decision buttons for a non-Compliance
+account, and Register renders read-only (no "Add party", no Edit/Delete column) for
+anyone but Secretariat. This is "control by department" in the sense the request
+asked for — the server-side check is still the real boundary; the UI just doesn't make
+someone hunt for a 403 to learn they can't do something.
+
+For monitoring, every sign-in, failed sign-in attempt, and sign-out is written into the
+same `audit.event` log as case activity (`LoginSucceeded` / `LoginFailed` / `LoggedOut`),
+hash-chained the same way — the Audit tab is the usage-monitoring view, not a separate
+page. A failed attempt logs the attempted username but no password, and is attributed to
+`system` rather than an account, since no account was proven to exist yet.
 
 ## What maps to what
 
@@ -110,9 +158,9 @@ depends on.
 Called out here so it isn't mistaken for an oversight — none of this was asked for by
 the transcript, and the assistant in the original chat explicitly deferred most of it:
 
-- **Auth.** There's no login. `x-actor` header picks a fixed demo persona (`finance` /
-  `compliance`); the frontend sends `finance` for submissions and `compliance` for
-  decisions, matching the two named actors in the mockup (Faridah, Nurul Aziz).
+- **Account management UI.** Only one seeded account exists (`admin`, department
+  `admin`). There's no sign-up flow, password reset, or admin screen to add more
+  accounts — insert directly into `auth.account` for now (see above).
 - **Employee COI declarations, announcement/circular drafting, mandate-headroom
   tracking.** The transcript raised these as "say the word and I'll add" follow-ups;
   the user never asked, and the design itself never implements them either.
