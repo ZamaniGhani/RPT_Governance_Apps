@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import type { CurrentUser } from '../api/types';
 import { Blueprint } from '../components/Blueprint';
+import { DepartmentRoles } from '../components/DepartmentRoles';
 
 export function Login({ onSignedIn }: { onSignedIn: (user: CurrentUser) => void }) {
   const [username, setUsername] = useState('');
@@ -28,7 +29,7 @@ export function Login({ onSignedIn }: { onSignedIn: (user: CurrentUser) => void 
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-page-gradient)', padding: 20 }}>
       <Blueprint
         className="animate-in"
-        style={{ width: 'min(400px, 100%)', display: 'flex', flexDirection: 'column', gap: 20, padding: 32, background: 'var(--color-surface)', boxShadow: 'var(--shadow-lg)' }}
+        style={{ width: 'min(460px, 100%)', display: 'flex', flexDirection: 'column', gap: 20, padding: 32, background: 'var(--color-surface)', boxShadow: 'var(--shadow-lg)' }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div
@@ -85,10 +86,13 @@ export function Login({ onSignedIn }: { onSignedIn: (user: CurrentUser) => void 
           </button>
         </form>
 
-        <p style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: 'var(--color-neutral-600)' }}>
-          Access is controlled by department — Finance submits transactions, Compliance decides and audits, the
-          Secretariat administers the register. Every sign-in and decision is written to the append-only audit log.
-        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span className="kicker">Department-based control, per your role</span>
+          <DepartmentRoles compact />
+          <p style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: 'var(--color-neutral-600)' }}>
+            Every sign-in, decision and change is written to the append-only audit log.
+          </p>
+        </div>
       </Blueprint>
     </div>
   );

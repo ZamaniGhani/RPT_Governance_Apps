@@ -9,6 +9,7 @@ import type {
   BasisOption,
   CaseKind,
   CaseSummary,
+  CreateUserPayload,
   CurrentUser,
   Department,
   Gate,
@@ -18,6 +19,7 @@ import type {
   SubmitCasePayload,
   Thresholds,
   UploadedDocument,
+  UserAccount,
 } from './types';
 
 /**
@@ -51,10 +53,52 @@ const BASIS_OPTIONS: BasisOption[] = [
 // screen behaves identically in both builds. There's no real security here —
 // the whole demo is client-side, same as everything else in this file.
 const DEPARTMENT_LABEL: Record<Department, string> = { finance: 'Finance', compliance: 'Compliance', secretariat: 'Secretariat', admin: 'Admin' };
-const MOCK_ACCOUNTS: { username: string; password: string; displayName: string; department: Department }[] = [
-  { username: 'admin', password: 'Admin@2026', displayName: 'System Administrator', department: 'admin' },
+
+interface MockAccount {
+  id: string;
+  username: string;
+  password: string;
+  displayName: string;
+  email: string;
+  department: Department;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+// A representative multi-department roster — the brief expects a real
+// deployment to have more than a handful of accounts, so the demo seeds one
+// instead of just the single admin login.
+const accounts: MockAccount[] = [
+  { id: 'user_admin', username: 'admin', password: 'Admin@2026', displayName: 'System Administrator', email: 'admin@example.com', department: 'admin', createdAt: '2026-01-01T00:00:00Z', lastLoginAt: null },
+  { id: 'user_faridah', username: 'faridah.finance', password: 'Finance@2026', displayName: 'Faridah binti Yusof', email: 'faridah.yusof@demogroup.my', department: 'finance', createdAt: '2026-01-05T00:00:00Z', lastLoginAt: daysAgo(35) },
+  { id: 'user_hafiz', username: 'hafiz.finance', password: 'Finance@2026', displayName: 'Muhammad Hafiz', email: 'hafiz.rahman@demogroup.my', department: 'finance', createdAt: '2026-01-05T00:00:00Z', lastLoginAt: null },
+  { id: 'user_nurul', username: 'nurul.compliance', password: 'Compliance@2026', displayName: 'Nurul Aziz', email: 'nurul.aziz@demogroup.my', department: 'compliance', createdAt: '2026-01-06T00:00:00Z', lastLoginAt: daysAgo(9) },
+  { id: 'user_wei', username: 'weilun.compliance', password: 'Compliance@2026', displayName: 'Tan Wei Lun', email: 'weilun.tan@demogroup.my', department: 'compliance', createdAt: '2026-01-06T00:00:00Z', lastLoginAt: null },
+  { id: 'user_syafiq', username: 'syafiq.secretariat', password: 'Secretariat@2026', displayName: 'Syafiq Ibrahim', email: 'syafiq.ibrahim@demogroup.my', department: 'secretariat', createdAt: '2026-01-07T00:00:00Z', lastLoginAt: null },
+  { id: 'user_kavitha', username: 'kavitha.secretariat', password: 'Secretariat@2026', displayName: 'Kavitha Ramasamy', email: 'kavitha.ramasamy@demogroup.my', department: 'secretariat', createdAt: '2026-01-07T00:00:00Z', lastLoginAt: null },
+  { id: 'user_zul', username: 'zul.finance', password: 'Finance@2026', displayName: 'Zulkifli Osman', email: 'zul.osman@demogroup.my', department: 'finance', createdAt: '2026-02-01T00:00:00Z', lastLoginAt: null },
+  { id: 'user_amy', username: 'amy.compliance', password: 'Compliance@2026', displayName: 'Amy Chong', email: 'amy.chong@demogroup.my', department: 'compliance', createdAt: '2026-02-01T00:00:00Z', lastLoginAt: null },
+  { id: 'user_ravi', username: 'ravi.secretariat', password: 'Secretariat@2026', displayName: 'Ravi Kumar', email: 'ravi.kumar@demogroup.my', department: 'secretariat', createdAt: '2026-02-10T00:00:00Z', lastLoginAt: null },
+  { id: 'user_siti', username: 'siti.finance', password: 'Finance@2026', displayName: 'Siti Nurhaliza', email: 'siti.nurhaliza@demogroup.my', department: 'finance', createdAt: '2026-02-10T00:00:00Z', lastLoginAt: null },
 ];
 let currentUser: CurrentUser | null = null;
+
+function toCurrentUser(a: MockAccount): CurrentUser {
+  return { id: a.id, username: a.username, displayName: a.displayName, email: a.email, department: a.department, departmentLabel: DEPARTMENT_LABEL[a.department] };
+}
+
+function toUserAccount(a: MockAccount): UserAccount {
+  return {
+    id: a.id,
+    username: a.username,
+    displayName: a.displayName,
+    email: a.email,
+    department: a.department,
+    departmentLabel: DEPARTMENT_LABEL[a.department],
+    createdAt: a.createdAt,
+    lastLoginAt: a.lastLoginAt,
+  };
+}
 
 const APPROVE_LABEL_BY_GATE: Record<string, string> = {
   circular: 'Escalate to circular',
@@ -347,20 +391,21 @@ const delay = <T,>(value: T) => new Promise<T>((resolve) => setTimeout(() => res
 
 export const api: Api = {
   login: (username, password) => {
-    const found = MOCK_ACCOUNTS.find((a) => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password);
+    const found = accounts.find((a) => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password);
     const at = new Date().toISOString();
     if (!found) {
       pushEvent(username.trim() || 'unknown', at, 'system', 'LoginFailed', `Failed login attempt for username "${username.trim()}".`);
       return Promise.reject(new Error('Incorrect username or password'));
     }
-    currentUser = { username: found.username, displayName: found.displayName, department: found.department, departmentLabel: DEPARTMENT_LABEL[found.department] };
-    pushEvent(found.username, at, currentActorLabel(), 'LoginSucceeded', `${found.displayName} (${DEPARTMENT_LABEL[found.department]}) signed in.`);
+    found.lastLoginAt = at;
+    currentUser = toCurrentUser(found);
+    pushEvent(found.id, at, currentActorLabel(), 'LoginSucceeded', `${found.displayName} (${DEPARTMENT_LABEL[found.department]}) signed in.`);
     return delay(currentUser);
   },
 
   logout: () => {
     if (currentUser) {
-      pushEvent(currentUser.username, new Date().toISOString(), currentActorLabel(), 'LoggedOut', `${currentUser.displayName} (${currentUser.departmentLabel}) signed out.`);
+      pushEvent(currentUser.id, new Date().toISOString(), currentActorLabel(), 'LoggedOut', `${currentUser.displayName} (${currentUser.departmentLabel}) signed out.`);
     }
     currentUser = null;
     return delay(undefined);
@@ -483,4 +528,43 @@ export const api: Api = {
   registryMeta: () => delay({ basisOptions: BASIS_OPTIONS }),
 
   downloadExport,
+
+  listUsers: () => delay(accounts.map(toUserAccount).sort((a, b) => a.displayName.localeCompare(b.displayName))),
+
+  createUser: (payload: CreateUserPayload) => {
+    requireDepartment('admin');
+    const username = payload.username.trim();
+    const email = payload.email.trim();
+    const clash = accounts.find((a) => a.username.toLowerCase() === username.toLowerCase() || a.email.toLowerCase() === email.toLowerCase());
+    if (clash) {
+      return Promise.reject(new Error(clash.username.toLowerCase() === username.toLowerCase() ? 'That username is already taken' : 'That email is already in use'));
+    }
+    const account: MockAccount = {
+      id: rid('user_'),
+      username,
+      password: payload.password,
+      displayName: payload.displayName.trim(),
+      email,
+      department: payload.department,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: null,
+    };
+    accounts.push(account);
+    pushEvent(account.id, account.createdAt, currentActorLabel(), 'UserCreated', `${account.displayName} (${account.email}) added to the ${DEPARTMENT_LABEL[account.department]} department by ${currentUser?.displayName ?? 'system'}.`);
+    return delay(toUserAccount(account));
+  },
+
+  deleteUser: (id: string) => {
+    requireDepartment('admin');
+    if (currentUser && id === currentUser.id) return Promise.reject(new Error("You can't remove your own account while signed in to it"));
+    const idx = accounts.findIndex((a) => a.id === id);
+    if (idx === -1) return Promise.reject(new Error('User not found'));
+    const account = accounts[idx]!;
+    if (account.department === 'admin' && accounts.filter((a) => a.department === 'admin').length <= 1) {
+      return Promise.reject(new Error('At least one admin account must remain'));
+    }
+    pushEvent(account.id, new Date().toISOString(), currentActorLabel(), 'UserRemoved', `${account.displayName} (${account.email}) removed from the ${DEPARTMENT_LABEL[account.department]} department by ${currentUser?.displayName ?? 'system'}.`);
+    accounts.splice(idx, 1);
+    return delay(undefined);
+  },
 };

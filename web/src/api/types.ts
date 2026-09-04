@@ -1,10 +1,38 @@
 export type Department = 'finance' | 'compliance' | 'secretariat' | 'admin';
 
+export const DEPARTMENT_OPTIONS: { code: Department; label: string; canDo: string }[] = [
+  { code: 'finance', label: 'Finance', canDo: 'Submit a transaction in Intake, upload financial documents' },
+  { code: 'compliance', label: 'Compliance', canDo: 'Approve, reject, refer or reopen a case in Alerts' },
+  { code: 'secretariat', label: 'Secretariat', canDo: 'Create, edit or remove Register entries' },
+  { code: 'admin', label: 'Admin', canDo: 'Everything — add or remove user accounts, for initial setup and support' },
+];
+
 export interface CurrentUser {
+  id: string;
   username: string;
   displayName: string;
+  email: string;
   department: Department;
   departmentLabel: string;
+}
+
+export interface UserAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  department: Department;
+  departmentLabel: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface CreateUserPayload {
+  username: string;
+  password: string;
+  displayName: string;
+  email: string;
+  department: Department;
 }
 
 export type CaseKind = 'rpt_one_off' | 'rrpt' | 'rpt_recurring_non_ordinary';

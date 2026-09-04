@@ -3,6 +3,7 @@ import type {
   BasisOption,
   CaseSummary,
   CreatePartyPayload,
+  CreateUserPayload,
   CurrentUser,
   KindOption,
   PartyRow,
@@ -10,6 +11,7 @@ import type {
   Thresholds,
   UpdatePartyPayload,
   UploadedDocument,
+  UserAccount,
 } from './types';
 
 export class UnauthorizedError extends Error {}
@@ -66,6 +68,10 @@ export const api = {
   downloadExport: () => {
     window.location.href = '/api/export/register.xls';
   },
+
+  listUsers: () => request<UserAccount[]>('/users'),
+  createUser: (payload: CreateUserPayload) => request<UserAccount>('/users', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteUser: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
 };
 
 /** Shape the demo build's mock client (src/api/mock.ts) must match exactly. */

@@ -1,10 +1,13 @@
 export type Department = 'finance' | 'compliance' | 'secretariat' | 'admin';
 
+export const DEPARTMENTS: Department[] = ['finance', 'compliance', 'secretariat', 'admin'];
+
 export interface AccountRow {
   id: string;
   username: string;
   password_hash: string;
   display_name: string;
+  email: string;
   department: Department;
   active: boolean;
   created_at: string;

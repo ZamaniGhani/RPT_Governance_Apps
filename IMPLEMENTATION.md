@@ -43,10 +43,9 @@ password: Admin@2026
 ```
 
 This account's department is `admin`, which bypasses every department check below —
-it's a placeholder for initial testing, not a real user. Add real accounts by inserting
-into `auth.account` directly (`password_hash` is bcrypt — hash with
-`node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"` from
-`server/`) until there's a UI for it.
+it's a placeholder for initial testing, not a real user. Add real accounts from the
+**Users** tab once signed in as admin (see "User directory and account management"
+below) rather than inserting rows by hand.
 
 ### Static demo (no backend, no database)
 
@@ -100,6 +99,49 @@ same `audit.event` log as case activity (`LoginSucceeded` / `LoginFailed` / `Log
 hash-chained the same way — the Audit tab is the usage-monitoring view, not a separate
 page. A failed attempt logs the attempted username but no password, and is attributed to
 `system` rather than an account, since no account was proven to exist yet.
+
+The department → permission table above is also shown in the product itself, not just
+here: on the Login screen (so anyone signing in can see what their department will let
+them do before they even authenticate) and again on the Users tab behind a "What each
+department can do" disclosure (so an admin has it in view while deciding what
+department to put a new hire in). Both render the same `DEPARTMENT_OPTIONS` constant in
+`web/src/api/types.ts` through one shared `<DepartmentRoles>` component, so the two
+places can never drift out of sync with each other.
+
+### User directory and account management
+
+A new **Users** tab (`web/src/console/tabs/Users.tsx`) lists every account with console
+access — name, email, department and last sign-in — for the monitoring the login work
+was originally asked to provide, now extended to accounts themselves rather than just
+activity. It's visible to every signed-in department (seeing who has access is itself
+part of "monitoring the use of the app"), but only an `admin` account gets the "+ Add
+user" button and the per-row "Remove" action; everyone else sees the same table
+read-only with a note explaining why.
+
+Backend support lives in the `auth` module alongside login/logout, since it's the same
+`auth.account` table:
+
+- `GET /api/users` — any signed-in account.
+- `POST /api/users` — `admin` only. Validates with zod (username ≥3 chars, password
+  ≥8 chars, a real email address, a valid department), pre-checks for a username/email
+  clash before hashing the password (`bcrypt`, same cost factor as login), and appends a
+  `UserCreated` audit event naming who added whom to which department.
+- `DELETE /api/users/:id` — `admin` only, with two guards even an admin can't bypass:
+  you can't remove the account you're currently signed in as, and the last remaining
+  `admin` account can't be removed (there would be no one left who could add another
+  one back). A removal deletes the account's sessions first, then the account row itself
+  — a real delete, not a soft "retire" like Register, because unlike a party relation
+  nothing else holds a foreign key to an account and audit events already reference the
+  actor by a text label, not by ID (see below), so nothing about history depends on the
+  row still existing. A `UserRemoved` audit event is appended before the delete so the
+  removal itself is the last thing the audit chain remembers about that account.
+
+Migration `1700000006000_auth-users.js` adds the `email` column (backfilling the seeded
+admin with a placeholder address) and a unique constraint on it alongside the existing
+one on `username`. The static demo (`api/mock.ts`) implements the identical rules
+(admin-only mutations, self-delete and last-admin guards, username/email uniqueness)
+against an in-memory roster seeded with eleven accounts across all four departments, so
+"Users" behaves the same whether you're clicking through the live app or the demo.
 
 ## What maps to what
 
@@ -186,9 +228,11 @@ depends on.
 Called out here so it isn't mistaken for an oversight — none of this was asked for by
 the transcript, and the assistant in the original chat explicitly deferred most of it:
 
-- **Account management UI.** Only one seeded account exists (`admin`, department
-  `admin`). There's no sign-up flow, password reset, or admin screen to add more
-  accounts — insert directly into `auth.account` for now (see above).
+- **Self-service account features.** Admins can add and remove accounts from the Users
+  tab (see above), but there's still no sign-up flow, "forgot password", or a way for a
+  user to change their own password or email — an admin has to remove and re-add an
+  account to change anything about it beyond its department, which nothing currently
+  lets you edit either.
 - **Employee COI declarations, announcement/circular drafting, mandate-headroom
   tracking.** The transcript raised these as "say the word and I'll add" follow-ups;
   the user never asked, and the design itself never implements them either.

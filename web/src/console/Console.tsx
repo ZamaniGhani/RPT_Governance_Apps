@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, UnauthorizedError } from '../api/client';
-import type { AuditEvent, BasisOption, CaseKind, CaseSummary, CurrentUser, KindOption, Thresholds } from '../api/types';
+import type { AuditEvent, BasisOption, CaseKind, CaseSummary, CurrentUser, KindOption, Thresholds, UserAccount } from '../api/types';
 import { Icon } from '../components/Icon';
 import { Alerts } from './tabs/Alerts';
 import { Intake } from './tabs/Intake';
 import { Register } from './tabs/Register';
 import { AuditTrail } from './tabs/AuditTrail';
 import { Guidance } from './tabs/Guidance';
+import { Users } from './tabs/Users';
 
-export type TabId = 'alerts' | 'intake' | 'register' | 'audit' | 'guidance';
+export type TabId = 'alerts' | 'intake' | 'register' | 'audit' | 'guidance' | 'users';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -21,14 +22,16 @@ const TABS: { id: TabId; label: string; icon: Parameters<typeof Icon>[0]['name']
   { id: 'register', label: 'Register', icon: 'register' },
   { id: 'audit', label: 'Audit', icon: 'audit' },
   { id: 'guidance', label: 'Guidance', icon: 'guidance' },
+  { id: 'users', label: 'Users', icon: 'users' },
 ];
 
-const HEADS: Record<TabId, [string, (ctx: { openCount: number; hasCases: boolean; hasParties: boolean }) => string]> = {
+const HEADS: Record<TabId, [string, (ctx: { openCount: number; hasCases: boolean; hasParties: boolean; userCount: number }) => string]> = {
   alerts: ['Alerts & approvals', (ctx) => (ctx.hasCases ? `${ctx.openCount} open` : 'nothing submitted yet')],
   intake: ['New transaction', () => 'screening runs as you type'],
   register: ['Related party register', (ctx) => (ctx.hasParties ? 'effective-dated, queryable as at any date' : 'no parties recorded')],
   audit: ['Audit trail', () => 'append-only event log'],
   guidance: ['Guidance — RPT or RRPT', () => 'decision flow, MMLR Chapter 10'],
+  users: ['Users', (ctx) => `${ctx.userCount} account${ctx.userCount === 1 ? '' : 's'} with access`],
 };
 
 export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut: () => void }) {
@@ -36,6 +39,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
   const [tab, setTab] = useState<TabId>('alerts');
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
+  const [users, setUsers] = useState<UserAccount[] | null>(null);
   const [totalParties, setTotalParties] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
   const [banner, setBanner] = useState('');
@@ -46,10 +50,11 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
 
   const refresh = useCallback(async () => {
     try {
-      const [caseRows, eventRows, parties] = await Promise.all([api.listCases(), api.listEvents(), api.listParties('')]);
+      const [caseRows, eventRows, parties, userRows] = await Promise.all([api.listCases(), api.listEvents(), api.listParties(''), api.listUsers()]);
       setCases(caseRows);
       setEvents(eventRows);
       setTotalParties(parties.totalParties);
+      setUsers(userRows);
     } catch (err) {
       if (err instanceof UnauthorizedError) onSignedOut();
       else throw err;
@@ -73,10 +78,11 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
     register: totalParties ? String(totalParties) : '',
     audit: events?.length ? String(events.length) : '',
     guidance: '',
+    users: users?.length ? String(users.length) : '',
   };
 
   const [headTitle, headNoteFn] = HEADS[tab];
-  const headNote = headNoteFn({ openCount, hasCases: !!cases?.length, hasParties: totalParties > 0 });
+  const headNote = headNoteFn({ openCount, hasCases: !!cases?.length, hasParties: totalParties > 0, userCount: users?.length ?? 0 });
 
   async function handleSubmitted(ref: string, note: string) {
     setBanner(`${ref} submitted. ${note}`);
@@ -125,7 +131,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
             <h1>{headTitle}</h1>
             <span className="tag tag-outline">{headNote}</span>
             <div className="panel-header-actions">
-              {tab !== 'intake' && tab !== 'guidance' && (
+              {tab !== 'intake' && tab !== 'guidance' && tab !== 'users' && (
                 <button
                   className="btn btn-secondary"
                   disabled={!cases?.length}
@@ -186,6 +192,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
               }}
             />
           )}
+          {tab === 'users' && <Users users={users} onChanged={refresh} canManage={canUse('admin')} currentUserId={user.id} />}
         </div>
       </div>
     </div>
