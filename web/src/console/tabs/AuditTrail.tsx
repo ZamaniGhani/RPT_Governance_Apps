@@ -1,7 +1,15 @@
 import type { AuditEvent } from '../../api/types';
 
 export function AuditTrail({ events, exportDisabled }: { events: AuditEvent[] | null; exportDisabled: boolean }) {
-  if (events === null) return null;
+  if (events === null) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: '16px 26px' }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="skeleton" style={{ height: 60, borderRadius: 'var(--radius-lg)' }} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
       <div className="audit-toolbar">

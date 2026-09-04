@@ -128,11 +128,39 @@ query, not a write path.
 
 **Frontend** (`web/src/console/`) is the console from the `.dc.html`: a nav rail
 (Alerts / Intake / Register / Audit / Guidance), rebuilt as real React components
-against the live API instead of an in-memory demo array. The Industry design system
-(`_ds/industry-*/styles.css`) is ported token-for-token into `web/src/styles/tokens.css`
-— same variables, same `.blueprint` corner-mark treatment, same component classes.
-Guidance's three-question decision flow and worked examples are intentionally
-client-side only, per the design ("these are teaching cases, not records").
+against the live API instead of an in-memory demo array. Guidance's three-question
+decision flow and worked examples are intentionally client-side only, per the design
+("these are teaching cases, not records").
+
+## Visual design system
+
+The console's look was redesigned from the original design handoff's monochrome
+"Industry" (blueprint drafting) system to a premium SaaS look — indigo/violet on
+white, soft gradients, large radii, layered shadows — without touching any route,
+API, permission check, or business rule. Everything lives in `web/src/styles/tokens.css`
+(color/type/spacing/radius/shadow tokens, base component classes: `.btn`, `.input`,
+`.card`, `.tag`, `.table`, `.dialog`, plus new `.alert`, `.skeleton`, `.spinner` and
+`.glass` utilities) and `web/src/styles/console.css` (the app-shell and per-tab layout
+classes). `Blueprint.tsx` itself is unchanged — the old corner-mark treatment is
+retired purely in CSS (`.blueprint > .corner { display: none }`), so the component
+still wraps every card and primary button exactly as before, it just renders as a
+rounded, shadowed surface instead of a hairline frame with crosshair corners.
+
+Status is now color-coded consistently with the brief's semantic palette: gate
+severity tags and the materiality panel (record/announce/circular → slate/amber/rose),
+decision outcomes in Alerts (approve/reject/refer → emerald/rose/amber), and Register
+entry status (Confirmed/Unconfirmed → emerald/amber). Loading states that used to
+`return null` while a tab's first fetch was in flight (Alerts, Register, Audit) now
+show a skeleton placeholder instead of a blank pane, and form errors render in a
+proper `.alert-error` box rather than a stray line of red text.
+
+Fixing this also caught and fixed two small pre-existing mobile bugs, unrelated to
+the visual change but found while re-testing every tab at 390px width: the Intake and
+Guidance side-by-side panels could overflow horizontally on narrow viewports because
+CSS grid items don't shrink below their content's natural width by default
+(`min-width: 0` was missing on the grid item wrappers), and the "what submitting
+writes" row in Intake could do the same because a long unbroken table name
+(`materiality.materiality_evaluation`) had nowhere to wrap.
 
 The 1180×760 desktop frame and 400px mobile frame in the design were canvas-artboard
 constraints of the design tool, not a spec — the real app is one responsive shell that

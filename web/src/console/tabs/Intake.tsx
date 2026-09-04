@@ -313,7 +313,7 @@ export function Intake({
               </div>
             </div>
           </Blueprint>
-          {error && <p style={{ margin: 0, fontSize: 12, color: 'var(--color-accent-900)' }}>{error}</p>}
+          {error && <div className="alert alert-error">{error}</div>}
         </div>
 
         <div className="intake-submit-bar">
@@ -362,7 +362,7 @@ export function Intake({
                     fontWeight: 600,
                     fontSize: 16,
                     fontVariantNumeric: 'tabular-nums',
-                    color: t.pct === null ? 'var(--color-neutral-500)' : t.pct >= 5 ? 'var(--color-accent-900)' : t.pct >= 0.25 ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+                    color: t.pct === null ? 'var(--color-neutral-500)' : t.pct >= 5 ? 'var(--color-error-text)' : t.pct >= 0.25 ? 'var(--color-warning-text)' : 'var(--color-neutral-700)',
                   }}
                 >
                   {t.pct === null ? '—' : fmtPct(t.pct)}
@@ -373,7 +373,7 @@ export function Intake({
                   className="ratio-bar-fill"
                   style={{
                     width: `${t.pct === null ? 0 : Math.min(100, (t.pct / 8) * 100).toFixed(1)}%`,
-                    background: t.pct !== null && t.pct >= 5 ? 'var(--color-accent-900)' : 'var(--color-accent)',
+                    background: t.pct !== null && t.pct >= 5 ? 'var(--color-error)' : t.pct !== null && t.pct >= 0.25 ? 'var(--color-warning)' : 'var(--color-accent)',
                   }}
                 />
                 <span className="ratio-bar-gate" />
@@ -387,18 +387,18 @@ export function Intake({
               display: 'flex',
               flexDirection: 'column',
               gap: 8,
-              padding: 13,
-              border: `1px solid ${gate.key === 'circular' ? 'var(--color-accent-900)' : gate.key === 'announce' ? 'var(--color-accent)' : 'var(--color-divider)'}`,
-              background: gate.key === 'circular' ? 'var(--color-accent-900)' : gate.key === 'announce' ? 'var(--color-accent-100)' : 'transparent',
+              padding: 14,
+              border: `1px solid ${gate.key === 'circular' ? 'var(--color-error-border)' : gate.key === 'announce' ? 'var(--color-warning-border)' : 'var(--color-divider)'}`,
+              background: gate.key === 'circular' ? 'var(--color-error-bg)' : gate.key === 'announce' ? 'var(--color-warning-bg)' : 'transparent',
             }}
           >
             <span
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: 16,
-                lineHeight: 1.15,
-                color: gate.key === 'circular' ? '#fff' : gate.key === 'announce' ? 'var(--color-accent-900)' : 'var(--color-text)',
+                lineHeight: 1.2,
+                color: gate.key === 'circular' ? 'var(--color-error-text)' : gate.key === 'announce' ? 'var(--color-warning-text)' : 'var(--color-text)',
               }}
             >
               {gate.title}
@@ -407,7 +407,7 @@ export function Intake({
               style={{
                 fontSize: 12.5,
                 lineHeight: 1.5,
-                color: gate.key === 'circular' ? '#fff' : gate.key === 'announce' ? 'var(--color-accent-900)' : 'var(--color-text)',
+                color: gate.key === 'circular' ? 'var(--color-error-text)' : gate.key === 'announce' ? 'var(--color-warning-text)' : 'var(--color-text)',
               }}
             >
               {gate.body}

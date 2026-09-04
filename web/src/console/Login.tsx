@@ -25,10 +25,26 @@ export function Login({ onSignedIn }: { onSignedIn: (user: CurrentUser) => void 
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', padding: 20 }}>
-      <Blueprint style={{ width: 'min(380px, 100%)', display: 'flex', flexDirection: 'column', gap: 18, padding: 28, background: 'var(--color-surface)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, letterSpacing: '0.01em' }}>RPT GOVERNANCE</div>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-page-gradient)', padding: 20 }}>
+      <Blueprint
+        className="animate-in"
+        style={{ width: 'min(400px, 100%)', display: 'flex', flexDirection: 'column', gap: 20, padding: 32, background: 'var(--color-surface)', boxShadow: 'var(--shadow-lg)' }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 800,
+              fontSize: 22,
+              letterSpacing: '-0.01em',
+              backgroundImage: 'var(--gradient-brand)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+            }}
+          >
+            RPT Governance
+          </div>
           <span className="kicker">Sign in to continue</span>
         </div>
 
@@ -57,7 +73,7 @@ export function Login({ onSignedIn }: { onSignedIn: (user: CurrentUser) => void 
               placeholder="••••••••"
             />
           </div>
-          {error && <p style={{ margin: 0, fontSize: 12.5, color: 'var(--color-accent-900)' }}>{error}</p>}
+          {error && <div className="alert alert-error">{error}</div>}
           <button
             type="submit"
             className="btn btn-primary blueprint"

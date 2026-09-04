@@ -7,9 +7,17 @@ import { dateLabel, fmtMyr, fmtPct, relativeAge } from '../../lib/format';
 type Filter = 'all' | 'open' | 'done';
 
 function gateTagClass(key: string | undefined): string {
-  if (key === 'circular' || key === 'announce') return 'tag tag-accent';
+  if (key === 'circular') return 'tag tag-error';
+  if (key === 'announce') return 'tag tag-warning';
   if (key === 'record') return 'tag tag-neutral';
   return 'tag tag-outline';
+}
+
+function decisionTagClass(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes('reject')) return 'tag-error';
+  if (l.includes('further information')) return 'tag-warning';
+  return 'tag-success';
 }
 
 function gateShortLabel(c: CaseSummary): string {
@@ -43,7 +51,20 @@ export function Alerts({
     setRationale('');
   }, [selId]);
 
-  if (cases === null) return null;
+  if (cases === null) {
+    return (
+      <div className="alerts-body">
+        <div className="alerts-queue">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton" style={{ height: 76, borderRadius: 'var(--radius-lg)' }} />
+            ))}
+          </div>
+        </div>
+        <div className="alerts-detail" />
+      </div>
+    );
+  }
 
   const openCount = cases.filter((c) => c.status !== 'decided').length;
   const doneCount = cases.length - openCount;
@@ -205,8 +226,22 @@ export function Alerts({
             </Blueprint>
 
             {sel.decision ? (
-              <Blueprint style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 13, border: '1px solid var(--color-accent)', background: 'var(--color-accent-100)' }}>
-                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 15 }}>{sel.decision.label}</span>
+              <Blueprint
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  padding: 14,
+                  border: `1px solid var(--color-${decisionTagClass(sel.decision.label).replace('tag-', '')}-border)`,
+                  background: `var(--color-${decisionTagClass(sel.decision.label).replace('tag-', '')}-bg)`,
+                }}
+              >
+                <span
+                  className={`tag ${decisionTagClass(sel.decision.label)}`}
+                  style={{ alignSelf: 'flex-start', fontSize: 13, padding: '5px 12px' }}
+                >
+                  {sel.decision.label}
+                </span>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 12px', fontSize: 12 }}>
                   <span style={{ color: 'var(--color-neutral-700)' }}>Decided by</span>
                   <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 }}>{sel.decision.actor}</span>

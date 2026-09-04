@@ -133,7 +133,11 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
         )}
       </div>
 
-      {error && <p style={{ margin: '10px 24px 0', fontSize: 12, color: 'var(--color-accent-900)' }}>{error}</p>}
+      {error && (
+        <div className="alert alert-error" style={{ margin: '10px 24px 0' }}>
+          {error}
+        </div>
+      )}
 
       {canAdminister && creating && (
         <Blueprint style={{ margin: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 10, padding: 14 }}>
@@ -174,6 +178,13 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
       )}
 
       <div className="register-table-wrap">
+        {parties === null && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton" style={{ height: 40, borderRadius: 'var(--radius-md)' }} />
+            ))}
+          </div>
+        )}
         {parties && parties.length > 0 && (
           <table className="table" style={{ width: '100%' }}>
             <thead>
@@ -211,7 +222,7 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
                     </td>
                     <td style={{ fontSize: 12.5, fontVariantNumeric: 'tabular-nums' }}>{dateLabel(p.effectiveFrom)}</td>
                     <td>
-                      <span className={p.status === 'Confirmed' ? 'tag tag-accent' : 'tag tag-outline'}>{p.status}</span>
+                      <span className={p.status === 'Confirmed' ? 'tag tag-success' : 'tag tag-warning'}>{p.status}</span>
                     </td>
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12.5 }}>{p.rptCount}</td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -234,7 +245,7 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
                     <td style={{ fontSize: 12.5, color: 'var(--color-neutral-800)' }}>{p.basis}</td>
                     <td style={{ fontSize: 12.5, fontVariantNumeric: 'tabular-nums' }}>{dateLabel(p.effectiveFrom)}</td>
                     <td>
-                      <span className={p.status === 'Confirmed' ? 'tag tag-accent' : 'tag tag-outline'}>{p.status}</span>
+                      <span className={p.status === 'Confirmed' ? 'tag tag-success' : 'tag tag-warning'}>{p.status}</span>
                     </td>
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12.5 }}>{p.rptCount}</td>
                     {canAdminister && (
