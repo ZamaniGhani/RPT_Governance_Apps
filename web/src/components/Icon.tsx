@@ -1,4 +1,7 @@
-type Shape = { type: 'path'; d: string } | { type: 'circle'; cx: number; cy: number; r: number };
+type Shape =
+  | { type: 'path'; d: string }
+  | { type: 'circle'; cx: number; cy: number; r: number }
+  | { type: 'rect'; x: number; y: number; width: number; height: number; rx?: number };
 
 const ICONS: Record<string, Shape[]> = {
   alerts: [
@@ -13,6 +16,12 @@ const ICONS: Record<string, Shape[]> = {
     { type: 'circle', cx: 9, cy: 7, r: 4 },
     { type: 'path', d: 'M22 21v-2a4 4 0 0 0-3-3.87' },
     { type: 'path', d: 'M16 3.13a4 4 0 0 1 0 7.75' },
+  ],
+  board: [
+    { type: 'rect', x: 3, y: 3, width: 7, height: 9, rx: 1 },
+    { type: 'rect', x: 14, y: 3, width: 7, height: 5, rx: 1 },
+    { type: 'rect', x: 14, y: 12, width: 7, height: 9, rx: 1 },
+    { type: 'rect', x: 3, y: 16, width: 7, height: 5, rx: 1 },
   ],
 };
 
@@ -29,9 +38,11 @@ export function Icon({ name, size = 15 }: { name: keyof typeof ICONS; size?: num
       strokeLinejoin="round"
       style={{ flex: 'none', opacity: 0.8 }}
     >
-      {ICONS[name].map((shape, i) =>
-        shape.type === 'circle' ? <circle key={i} cx={shape.cx} cy={shape.cy} r={shape.r} /> : <path key={i} d={shape.d} />
-      )}
+      {ICONS[name].map((shape, i) => {
+        if (shape.type === 'circle') return <circle key={i} cx={shape.cx} cy={shape.cy} r={shape.r} />;
+        if (shape.type === 'rect') return <rect key={i} x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} />;
+        return <path key={i} d={shape.d} />;
+      })}
     </svg>
   );
 }

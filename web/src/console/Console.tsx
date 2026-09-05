@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, UnauthorizedError } from '../api/client';
-import type { AuditEvent, BasisOption, CaseKind, CaseSummary, CurrentUser, KindOption, Thresholds, UserAccount } from '../api/types';
+import type { AuditEvent, BasisOption, CaseKind, CaseSummary, CurrentUser, KindOption, PartyRow, Thresholds, UserAccount } from '../api/types';
 import { Icon } from '../components/Icon';
 import { Alerts } from './tabs/Alerts';
+import { Board } from './tabs/Board';
 import { Intake } from './tabs/Intake';
 import { Register } from './tabs/Register';
 import { AuditTrail } from './tabs/AuditTrail';
 import { Guidance } from './tabs/Guidance';
 import { Users } from './tabs/Users';
 
-export type TabId = 'alerts' | 'intake' | 'register' | 'audit' | 'guidance' | 'users';
+export type TabId = 'board' | 'alerts' | 'intake' | 'register' | 'audit' | 'guidance' | 'users';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -17,6 +18,7 @@ function initials(name: string): string {
 }
 
 const TABS: { id: TabId; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
+  { id: 'board', label: 'Board', icon: 'board' },
   { id: 'alerts', label: 'Alerts', icon: 'alerts' },
   { id: 'intake', label: 'Intake', icon: 'intake' },
   { id: 'register', label: 'Register', icon: 'register' },
@@ -26,6 +28,7 @@ const TABS: { id: TabId; label: string; icon: Parameters<typeof Icon>[0]['name']
 ];
 
 const HEADS: Record<TabId, [string, (ctx: { openCount: number; hasCases: boolean; hasParties: boolean; userCount: number }) => string]> = {
+  board: ['Board dashboard', () => 'periodic oversight summary, not a live feed to act from'],
   alerts: ['Alerts & approvals', (ctx) => (ctx.hasCases ? `${ctx.openCount} open` : 'nothing submitted yet')],
   intake: ['New transaction', () => 'screening runs as you type'],
   register: ['Related party register', (ctx) => (ctx.hasParties ? 'effective-dated, queryable as at any date' : 'no parties recorded')],
@@ -40,6 +43,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   const [users, setUsers] = useState<UserAccount[] | null>(null);
+  const [partyRows, setPartyRows] = useState<PartyRow[] | null>(null);
   const [totalParties, setTotalParties] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
   const [banner, setBanner] = useState('');
@@ -54,6 +58,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
       setCases(caseRows);
       setEvents(eventRows);
       setTotalParties(parties.totalParties);
+      setPartyRows(parties.parties);
       setUsers(userRows);
     } catch (err) {
       if (err instanceof UnauthorizedError) onSignedOut();
@@ -72,7 +77,13 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
 
   const openCount = useMemo(() => (cases ?? []).filter((c) => c.status !== 'decided').length, [cases]);
 
+  const awaitingBoardCount = useMemo(
+    () => (cases ?? []).filter((c) => c.evaluation?.gate.key === 'circular' && c.status !== 'decided').length,
+    [cases]
+  );
+
   const counts: Record<TabId, string> = {
+    board: cases && awaitingBoardCount ? String(awaitingBoardCount) : '',
     alerts: cases ? String(openCount) : '',
     intake: '',
     register: totalParties ? String(totalParties) : '',
@@ -131,7 +142,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
             <h1>{headTitle}</h1>
             <span className="tag tag-outline">{headNote}</span>
             <div className="panel-header-actions">
-              {tab !== 'intake' && tab !== 'guidance' && tab !== 'users' && (
+              {tab !== 'intake' && tab !== 'guidance' && tab !== 'users' && tab !== 'board' && (
                 <button
                   className="btn btn-secondary"
                   disabled={!cases?.length}
@@ -162,6 +173,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
             </div>
           )}
 
+          {tab === 'board' && <Board cases={cases} events={events} users={users} parties={partyRows} ruleSet={ruleSet} />}
           {tab === 'alerts' && (
             <Alerts
               cases={cases}

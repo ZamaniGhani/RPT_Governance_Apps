@@ -200,6 +200,38 @@ uploaded supporting documents are hashed but not retained; and the export is a r
 list, not the annual-report-style disclosure table grouped by related party and nature
 of transaction. See the review that produced this list for the full account.
 
+## Board dashboard
+
+A **Board** tab (first in the rail) gives directors a periodic oversight read distinct
+from Alerts' operational queue — it's read-only for every department, same as Audit and
+Users, since seeing it is itself the point. Nothing here has its own API: it's entirely
+derived, client-side, from data the other tabs already fetch (`web/src/console/tabs/Board.tsx`),
+so there was no schema or backend change to ship it.
+
+- **KPI strip** — RPTs and value this year, open/decided split, how many sit at the
+  circular gate, how many are mid maker-checker awaiting a second sign-off.
+- **Threshold watchlist** — every related party ranked by their current rolling
+  12-month aggregate percentage, reusing the same ratio-bar visual as Intake, with the
+  5% gate line marked. This is the one genuinely predictive widget: it surfaces a party
+  approaching the gate before the transaction that tips them over is even submitted,
+  rather than only after the fact.
+- **Awaiting the Board** — every open case at the circular gate, with its maker-checker
+  state (no sign-off yet / one of two, and by whom).
+- **Register health** — how many related parties are still Unconfirmed, and the oldest
+  one, now that confirming is an actual action (see above).
+- **Control environment** — failed logins, accounts added/removed in a selectable
+  window (30/90/365 days), and the current headcount with access.
+- **Recent circular-gate decisions** — the last five, with both signers named, for
+  cross-referencing against board minutes.
+
+Deliberately excluded from the first cut: it's a live-computed read labelled "as of
+now," not a point-in-time snapshot pinned to an actual board meeting date — a real
+snapshot (so the numbers a board saw on a given date stay fixed even as new
+transactions come in) would need its own stored-snapshot table and is a reasonable
+future addition, not built here. It's also visible to every department rather than
+gated to a distinct "director" role, since the app has no such role today and adding
+one only to view a report seemed like more schema than the ask warranted.
+
 ## What maps to what
 
 **Database** (`server/migrations/`) implements exactly the schema in the design doc's
