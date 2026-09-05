@@ -53,7 +53,7 @@ export const VERDICTS: Record<VerdictKey, { label: string; body: string; tag: st
   },
   rpt: {
     label: 'RPT — one-off related party transaction',
-    body: 'Run the four percentage-ratio tests under 10.02(g). At 0.25% or above it needs an immediate announcement; at 5% or above it needs a circular, an independent adviser and shareholder approval, with interested parties abstaining. It also joins the twelve-month aggregation window for this party.',
+    body: 'Run the four percentage-ratio tests under 10.02(g). Below 5% it is recorded only; at 5% or above it needs an immediate announcement, a circular, an independent adviser and shareholder approval, with interested directors and major shareholders abstaining. Either way it joins the twelve-month aggregation window for this party.',
     tag: 'tag tag-accent',
   },
   rptRecurring: {

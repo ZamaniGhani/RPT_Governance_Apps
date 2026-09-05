@@ -38,23 +38,16 @@ export function gateFor(topPct: number | null, thresholds: Thresholds): Gate {
       body: 'A consideration and at least one denominator are needed before any ratio can be computed. No gate is asserted and no default is applied.',
     };
   }
-  if (topPct >= thresholds.circularThreshold) {
+  if (topPct >= thresholds.materialThreshold) {
     return {
       key: 'circular',
       title: 'Circular and shareholder approval',
-      body: `Highest ratio ${fmtPct(topPct)} meets the ${thresholds.circularThreshold}% gate. Requires an immediate announcement, a circular to shareholders, an independent adviser's opinion, and approval in general meeting. Interested directors and shareholders must abstain.`,
-    };
-  }
-  if (topPct >= thresholds.announceThreshold) {
-    return {
-      key: 'announce',
-      title: 'Immediate announcement',
-      body: `Highest ratio ${fmtPct(topPct)} is above the ${thresholds.announceThreshold}% trigger and below ${thresholds.circularThreshold}%. Announce to Bursa immediately on entry; no shareholder approval, but the transaction consumes mandate headroom and enters the twelve-month aggregation window.`,
+      body: `Highest ratio ${fmtPct(topPct)} meets the ${thresholds.materialThreshold}% gate. Requires an immediate announcement, a circular to shareholders, an independent adviser's opinion, and approval in general meeting. Interested directors and major shareholders must abstain from voting, and must ensure their associates also abstain.`,
     };
   }
   return {
     key: 'record',
     title: 'Record only',
-    body: `Highest ratio ${fmtPct(topPct)} is below every listing-rule trigger. Recorded in the register and the annual-report RPT schedule, and still counted towards aggregation — a later transaction with the same party can pull this one over a gate.`,
+    body: `Highest ratio ${fmtPct(topPct)} is below the ${thresholds.materialThreshold}% trigger. Recorded in the register and the annual-report RPT schedule, and still counted towards aggregation — a later transaction with the same party can pull this one over the gate.`,
   };
 }

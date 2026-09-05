@@ -30,9 +30,9 @@ import type {
  * (lib/materiality.ts) so the numbers behave identically to the live app.
  */
 
-const RULE_SET = { version: 'MMLR-CH10 v2026.1', effectiveFrom: '2026-01-01T00:00:00Z' };
+const RULE_SET = { version: 'MMLR-CH10 v2026.2', effectiveFrom: '2026-09-05T00:00:00Z' };
 const ROUTE_VERSION = 'RPT-STD v1';
-const THRESHOLDS: Thresholds = { announceThreshold: 0.25, circularThreshold: 5, profitAttributableFactor: 0.14 };
+const THRESHOLDS: Thresholds = { materialThreshold: 5, profitAttributableFactor: 0.14 };
 
 const KIND_OPTIONS: KindOption[] = [
   { code: 'rpt_one_off', label: 'One-off related party transaction' },
@@ -178,10 +178,19 @@ function evaluate(considerationMyr: number, financials: SubmitCasePayload['finan
   return { ratios, topPct, gate, aggregateMyr, aggregatePct };
 }
 
+// A rejected case never proceeded, so it must not inflate the aggregate a
+// later transaction with the same party is tested against (mirrors the
+// decision_key <> 'reject' filter in materiality/repository.ts server-side).
 function priorConsideration(partyId: string, before: string): number {
   const cutoff = new Date(before).getTime() - 365 * 24 * 3600 * 1000;
   return cases
-    .filter((c) => c.party.id === partyId && new Date(c.createdAt).getTime() >= cutoff && new Date(c.createdAt).getTime() < new Date(before).getTime())
+    .filter(
+      (c) =>
+        c.party.id === partyId &&
+        new Date(c.createdAt).getTime() >= cutoff &&
+        new Date(c.createdAt).getTime() < new Date(before).getTime() &&
+        !c.decision?.label.toLowerCase().startsWith('rejected')
+    )
     .reduce((sum, c) => sum + c.considerationMyr, 0);
 }
 
@@ -222,6 +231,7 @@ function createCase(input: {
     routeVersion: ROUTE_VERSION,
     status: 'open',
     decision: null,
+    pendingApproval: null,
   };
 
   pushEvent(kase.id, input.createdAt, input.submittedBy, 'TransactionSubmitted', `${kase.ref} created. ${input.nature}, consideration RM ${input.considerationMyr.toFixed(1)}m${input.transactionDate ? `, transaction date ${input.transactionDate}` : ''}.`);
@@ -450,11 +460,40 @@ export const api: Api = {
     return delay({ case: kase, isNewParty });
   },
 
-  decideCase: (id, decision, rationale) => {
+  decideCase: (id, decision, rationale, confirmNoConflict) => {
     requireDepartment('compliance');
+    if (!confirmNoConflict) {
+      return Promise.reject(new Error('You must confirm you are not a related party to this transaction and have no interest in it before deciding it.'));
+    }
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return Promise.reject(new Error('Case not found'));
-    cases[idx] = decide(cases[idx]!, new Date().toISOString(), decision, rationale);
+    const kase = cases[idx]!;
+    const at = new Date().toISOString();
+    const actor = currentActorLabel();
+    // Mirrors server/src/shared/actor.ts: the identity used to tell two
+    // approvers apart is the signed-in account's display name, same as
+    // every other actor attribution in this file.
+    const actorId = currentUser?.displayName ?? actor;
+
+    if (decision === 'approve' && kase.evaluation?.gate.key === 'circular') {
+      if (kase.pendingApproval?.actorId === actorId) {
+        return Promise.reject(
+          new Error("You already recorded the first approval on this case. A different Compliance or Admin account must provide the second sign-off — that is the control, not a formality.")
+        );
+      }
+      if (!kase.pendingApproval) {
+        const label = 'First approval recorded — awaiting a second, different Compliance sign-off before this counts as approved';
+        pushEvent(kase.id, at, actor, 'FirstApprovalRecorded', `${label}${rationale ? ` — ${rationale}` : ''}.`);
+        cases[idx] = { ...kase, pendingApproval: { actorId, actorLabel: actor, approvedAt: at } };
+        return delay(cases[idx]!);
+      }
+      const label = `${APPROVE_LABEL_BY_GATE[kase.evaluation.gate.key]} — recorded (dual sign-off: ${kase.pendingApproval.actorLabel}, then ${actor})`;
+      pushEvent(kase.id, at, actor, 'DecisionRecorded', `${label}${rationale ? ` — ${rationale}` : ''}.`);
+      cases[idx] = { ...kase, status: 'decided', pendingApproval: null, decision: { id: rid('decision_'), label, rationale, decidedAt: at, actor } };
+      return delay(cases[idx]!);
+    }
+
+    cases[idx] = { ...decide(kase, at, decision, rationale), pendingApproval: null };
     return delay(cases[idx]!);
   },
 
@@ -463,7 +502,7 @@ export const api: Api = {
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return Promise.reject(new Error('Case not found'));
     pushEvent(id, new Date().toISOString(), currentActorLabel(), 'CaseReopened', 'Case reopened for further review.');
-    cases[idx] = { ...cases[idx]!, status: 'open', decision: null };
+    cases[idx] = { ...cases[idx]!, status: 'open', decision: null, pendingApproval: null };
     return delay(cases[idx]!);
   },
 
@@ -514,6 +553,17 @@ export const api: Api = {
     if (!party) return Promise.reject(new Error('Party not found or already removed from the register'));
     party.retired = true;
     return delay(undefined);
+  },
+
+  confirmParty: (id) => {
+    requireDepartment('secretariat');
+    const party = parties.find((p) => p.id === id && !p.retired);
+    if (!party) return Promise.reject(new Error('Party not found or has no active register entry'));
+    if (!party.confirmed) {
+      party.confirmed = true;
+      pushEvent(party.id, new Date().toISOString(), currentActorLabel(), 'PartyRelationConfirmed', `${party.name} (${party.basis}) confirmed in the register by ${currentActorLabel()}.`);
+    }
+    return delay(toPartyRow(party));
   },
 
   listEvents: () =>

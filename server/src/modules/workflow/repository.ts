@@ -4,7 +4,15 @@ import type { ApprovalStepRow } from './types.js';
 
 export async function insertApprovalStep(
   client: PoolClient,
-  input: { caseId: string; role: string; actorId: string; decision: string; rationale: string | null }
+  input: {
+    caseId: string;
+    role: string;
+    actorId: string;
+    decision: string;
+    decisionKey: 'approve' | 'reject' | 'refer';
+    rationale: string | null;
+    conflictConfirmed: boolean;
+  }
 ): Promise<ApprovalStepRow> {
   await client.query('select pg_advisory_xact_lock(hashtextextended($1, 0))', [`approval_step:${input.caseId}`]);
   const seqResult = await client.query<{ seq: number }>(
@@ -13,9 +21,9 @@ export async function insertApprovalStep(
   );
   const seq = seqResult.rows[0]!.seq;
   const result = await client.query<ApprovalStepRow>(
-    `insert into workflow.approval_step (case_id, seq, role, actor_id, decision, rationale)
-     values ($1, $2, $3, $4, $5, $6) returning *`,
-    [input.caseId, seq, input.role, input.actorId, input.decision, input.rationale]
+    `insert into workflow.approval_step (case_id, seq, role, actor_id, decision, decision_key, rationale, conflict_confirmed)
+     values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
+    [input.caseId, seq, input.role, input.actorId, input.decision, input.decisionKey, input.rationale, input.conflictConfirmed]
   );
   return result.rows[0]!;
 }

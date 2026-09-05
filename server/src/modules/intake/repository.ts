@@ -53,6 +53,22 @@ export async function setCaseStatus(client: PoolClient, caseId: string, status: 
   await client.query('update intake.rpt_case set status = $2 where id = $1', [caseId, status]);
 }
 
+/**
+ * Holds (or clears) the first of the two approvals a circular-gate case
+ * needs before it counts as approved — pass null fields to clear it, on a
+ * reject/refer/reopen/final-approval.
+ */
+export async function setPendingApprover(
+  client: PoolClient,
+  caseId: string,
+  pending: { id: string; label: string; at: string } | null
+): Promise<void> {
+  await client.query(
+    'update intake.rpt_case set pending_approver_id = $2, pending_approver_label = $3, pending_approved_at = $4 where id = $1',
+    [caseId, pending?.id ?? null, pending?.label ?? null, pending?.at ?? null]
+  );
+}
+
 export async function getCase(db: Executor, caseId: string): Promise<RptCaseRow | null> {
   const result = await db.query<RptCaseRow>('select * from intake.rpt_case where id = $1', [caseId]);
   return result.rows[0] ?? null;

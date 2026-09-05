@@ -35,6 +35,7 @@ export function Alerts({
   onGoIntake,
   onChanged,
   canDecide,
+  currentUserDisplayName,
 }: {
   cases: CaseSummary[] | null;
   selId: string | null;
@@ -42,13 +43,18 @@ export function Alerts({
   onGoIntake: () => void;
   onChanged: () => Promise<void>;
   canDecide: boolean;
+  currentUserDisplayName: string;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [rationale, setRationale] = useState('');
+  const [confirmNoConflict, setConfirmNoConflict] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setRationale('');
+    setConfirmNoConflict(false);
+    setError('');
   }, [selId]);
 
   if (cases === null) {
@@ -79,9 +85,13 @@ export function Alerts({
   async function act(decision: 'approve' | 'reject' | 'refer') {
     if (!sel) return;
     setBusy(true);
+    setError('');
     try {
-      await api.decideCase(sel.id, decision, rationale.trim() || null);
+      await api.decideCase(sel.id, decision, rationale.trim() || null, confirmNoConflict);
+      setConfirmNoConflict(false);
       await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not record that decision');
     } finally {
       setBusy(false);
     }
@@ -90,13 +100,18 @@ export function Alerts({
   async function reopen() {
     if (!sel) return;
     setBusy(true);
+    setError('');
     try {
       await api.reopenCase(sel.id);
       await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reopen the case');
     } finally {
       setBusy(false);
     }
   }
+
+  const isPendingApprover = sel?.pendingApproval?.actorId === currentUserDisplayName;
 
   const approveLabel =
     sel?.evaluation?.gate.key === 'circular'
@@ -256,6 +271,14 @@ export function Alerts({
               </Blueprint>
             ) : canDecide ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {sel.pendingApproval && (
+                  <div className="alert alert-warning">
+                    {isPendingApprover
+                      ? `You recorded the first approval on ${dateLabel(sel.pendingApproval.approvedAt)}. A different Compliance or Admin account must sign off to finalise this — your own second click won't count.`
+                      : `${sel.pendingApproval.actorLabel} recorded the first of two required approvals on ${dateLabel(sel.pendingApproval.approvedAt)}. Approving now provides the second, independent sign-off this gate requires.`}
+                  </div>
+                )}
+                {error && <div className="alert alert-error">{error}</div>}
                 <div className="field">
                   <label htmlFor="rationale">Rationale for the record</label>
                   <input
@@ -266,20 +289,37 @@ export function Alerts({
                     placeholder="Why this decision, in the words that will appear in the minutes"
                   />
                 </div>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, lineHeight: 1.45, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={confirmNoConflict}
+                    onChange={(e) => setConfirmNoConflict(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                  />
+                  I confirm I am not a related party to this transaction and have no interest in it.
+                </label>
                 <div className="decision-buttons">
-                  <button className="btn btn-primary blueprint" style={{ minHeight: 44, padding: '0 18px' }} disabled={busy} onClick={() => act('approve')}>
+                  <button
+                    className="btn btn-primary blueprint"
+                    style={{ minHeight: 44, padding: '0 18px' }}
+                    disabled={busy || !confirmNoConflict || isPendingApprover}
+                    title={isPendingApprover ? "You already recorded the first approval — a different account must provide the second sign-off" : undefined}
+                    onClick={() => act('approve')}
+                  >
                     <i className="corner tl" /><i className="corner tr" /><i className="corner bl" /><i className="corner br" />
-                    {approveLabel}
+                    {sel.pendingApproval && !isPendingApprover ? `${approveLabel} (second sign-off)` : approveLabel}
                   </button>
-                  <button className="btn btn-secondary" style={{ minHeight: 44 }} disabled={busy} onClick={() => act('reject')}>
+                  <button className="btn btn-secondary" style={{ minHeight: 44 }} disabled={busy || !confirmNoConflict} onClick={() => act('reject')}>
                     Reject
                   </button>
-                  <button className="btn btn-secondary" style={{ minHeight: 44 }} disabled={busy} onClick={() => act('refer')}>
+                  <button className="btn btn-secondary" style={{ minHeight: 44 }} disabled={busy || !confirmNoConflict} onClick={() => act('refer')}>
                     Return for information
                   </button>
                 </div>
                 <p style={{ margin: 0, fontSize: 11, lineHeight: 1.5, color: 'var(--color-neutral-600)' }}>
-                  Interested parties are excluded from a case automatically; quorum is recomputed without them.
+                  {sel.evaluation?.gate.key === 'circular'
+                    ? 'This gate needs two different Compliance or Admin sign-offs to approve — a reject or referral only needs one.'
+                    : 'Your confirmation above is logged with this decision in the audit trail.'}
                 </p>
               </div>
             ) : (

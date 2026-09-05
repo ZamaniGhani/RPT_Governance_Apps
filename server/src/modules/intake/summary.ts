@@ -33,12 +33,16 @@ interface CaseSummaryRow {
   decision_rationale: string | null;
   decided_at: string | null;
   decision_actor: string | null;
+  pending_approver_id: string | null;
+  pending_approver_label: string | null;
+  pending_approved_at: string | null;
 }
 
 const QUERY = `
   select
     c.id, c.ref, c.kind, c.nature, c.consideration_myr, c.currency, c.transaction_date,
     c.rule_set_version, c.route_version, c.status, c.created_at, c.submitted_by,
+    c.pending_approver_id, c.pending_approver_label, c.pending_approved_at,
     p.id as party_id, p.legal_name as party_name,
     pr.basis_label as relation_label, pr.confirmed_at as relation_confirmed_at,
     me.ratios, me.top_pct, me.aggregate_myr, me.aggregate_pct, me.gate, me.gate_title, me.gate_body,
@@ -79,6 +83,8 @@ export interface CaseSummary {
   routeVersion: string;
   status: 'open' | 'decided';
   decision: { id: string; label: string; rationale: string | null; decidedAt: string; actor: string } | null;
+  /** A circular-gate approval awaiting a second, different Compliance sign-off — see intake/service.ts decideCase. */
+  pendingApproval: { actorId: string; actorLabel: string; approvedAt: string } | null;
 }
 
 function mapRow(row: CaseSummaryRow): CaseSummary {
@@ -115,14 +121,22 @@ function mapRow(row: CaseSummaryRow): CaseSummary {
     ruleSetVersion: row.rule_set_version,
     routeVersion: row.route_version,
     status: row.status,
-    decision: row.decision_id
-      ? {
-          id: row.decision_id,
-          label: row.decision_label!,
-          rationale: row.decision_rationale,
-          decidedAt: row.decided_at!,
-          actor: row.decision_actor!,
-        }
+    // A pending first approval leaves a workflow.approval_step row behind
+    // but the case is not yet decided — only surface `decision` once the
+    // case has actually finalised, or the frontend would show it as decided
+    // one sign-off too early.
+    decision:
+      row.status === 'decided' && row.decision_id
+        ? {
+            id: row.decision_id,
+            label: row.decision_label!,
+            rationale: row.decision_rationale,
+            decidedAt: row.decided_at!,
+            actor: row.decision_actor!,
+          }
+        : null,
+    pendingApproval: row.pending_approver_id
+      ? { actorId: row.pending_approver_id, actorLabel: row.pending_approver_label!, approvedAt: row.pending_approved_at! }
       : null,
   };
 }

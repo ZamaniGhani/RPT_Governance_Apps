@@ -97,6 +97,20 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
     }
   }
 
+  async function confirmParty(p: PartyRow) {
+    setBusy(true);
+    setError('');
+    try {
+      await api.confirmParty(p.id);
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not confirm party');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeParty(p: PartyRow) {
     const warn = p.rptCount
       ? `Remove ${p.name} from the register? It has ${p.rptCount} related transaction${p.rptCount > 1 ? 's' : ''}, which are unaffected — only the current register entry is removed.`
@@ -250,6 +264,17 @@ export function Register({ onChanged, canAdminister }: { onChanged?: () => void;
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12.5 }}>{p.rptCount}</td>
                     {canAdminister && (
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {p.status === 'Unconfirmed' && (
+                          <button
+                            className="btn btn-ghost"
+                            disabled={busy}
+                            onClick={() => confirmParty(p)}
+                            style={{ minHeight: 30, color: 'var(--color-success-text)' }}
+                            title="Confirm this relationship against a primary source before it's relied on"
+                          >
+                            Confirm
+                          </button>
+                        )}
                         <button className="btn btn-ghost" disabled={busy} onClick={() => startEdit(p)} style={{ minHeight: 30 }}>
                           Edit
                         </button>

@@ -44,8 +44,8 @@ export const api = {
   getCase: (id: string) => request<CaseSummary>(`/cases/${id}`),
   submitCase: (payload: SubmitCasePayload) =>
     request<{ case: CaseSummary; isNewParty: boolean }>('/cases', { method: 'POST', body: JSON.stringify(payload) }),
-  decideCase: (id: string, decision: 'approve' | 'reject' | 'refer', rationale: string | null) =>
-    request<CaseSummary>(`/cases/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, rationale }) }),
+  decideCase: (id: string, decision: 'approve' | 'reject' | 'refer', rationale: string | null, confirmNoConflict: boolean) =>
+    request<CaseSummary>(`/cases/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, rationale, confirmNoConflict }) }),
   reopenCase: (id: string) => request<CaseSummary>(`/cases/${id}/reopen`, { method: 'POST' }),
   uploadDocument: (file: File) => {
     const form = new FormData();
@@ -57,6 +57,7 @@ export const api = {
   updateParty: (id: string, payload: UpdatePartyPayload) =>
     request<PartyRow>(`/parties/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteParty: (id: string) => request<void>(`/parties/${id}`, { method: 'DELETE' }),
+  confirmParty: (id: string) => request<PartyRow>(`/parties/${id}/confirm`, { method: 'POST' }),
   listEvents: () => request<AuditEvent[]>('/events'),
   intakeMeta: () =>
     request<{

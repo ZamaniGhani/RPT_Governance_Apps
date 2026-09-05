@@ -143,6 +143,63 @@ one on `username`. The static demo (`api/mock.ts`) implements the identical rule
 against an in-memory roster seeded with eleven accounts across all four departments, so
 "Users" behaves the same whether you're clicking through the live app or the demo.
 
+## Closing the RPT-practice gaps
+
+A company-secretary review of this build against real Bursa Malaysia MMLR Chapter 10
+practice (not just the original design brief) found several places where the app's own
+copy claimed a control that the code didn't actually implement, or implemented a rule
+that doesn't match the real Listing Requirements. Four of those are fixed:
+
+**A single, real 5% gate, not a fictional 0.25%/5% two-tier one.** The seeded rule set
+had a lower "0.25% → announce only, no shareholder approval" band invented for the
+original design brief. Real Chapter 10 Part III puts immediate announcement AND the
+circular/shareholder-approval requirement at the *same* 5% percentage-ratio threshold
+for a one-off (or non-ordinary-course-recurring) RPT — there is no separate lower band.
+Migration `1700000007000_materiality-single-threshold.js` retires the old rule set
+(`MMLR-CH10 v2026.1`) and inserts `MMLR-CH10 v2026.2` with one `materialThreshold: 5`.
+Consistent with ADR-03, this only changes how transactions submitted from now on are
+gated — nothing about a case already evaluated under v2026.1 is rewritten; its stored
+gate title/body still reads exactly as it did the day it was decided.
+
+**The register's "unconfirmed → secretariat confirms" step is now reachable.** The
+repository function that flips a proposed party relation to Confirmed
+(`confirmRelation`) existed but no route ever called it, so an Intake-proposed party sat
+"Unconfirmed" forever with no way to change that short of editing its basis of
+relationship as a side effect. `POST /api/parties/:id/confirm` (secretariat/admin, an
+idempotent no-op if already confirmed) and a "Confirm" button on Unconfirmed rows in
+Register close that gap, with a `PartyRelationConfirmed` audit event.
+
+**A circular-gate approval needs two different people, and everyone attests they're not
+conflicted.** The Alerts screen used to say "interested parties are excluded
+automatically; quorum is recomputed without them" — nothing backed that claim. Now:
+every decision (approve, reject, or refer) requires the deciding user to tick a
+confirmation that they are not a related party to the transaction and have no interest
+in it, logged with the decision (`workflow.approval_step.conflict_confirmed`); and a
+case at the circular gate isn't treated as approved after one click — the first approval
+is held on the case (`intake.rpt_case.pending_approver_*`) and a second, *different*
+Compliance or Admin account has to approve it before status flips to `decided` (reject
+and refer stay single-sign-off, since either one halts the transaction rather than
+letting it proceed). This is real maker-checker, not full board/Audit-Committee
+modelling — the app still doesn't know who your actual directors and shareholders are —
+but it's an honest control instead of an unbacked claim.
+
+**A rejected transaction no longer inflates the next one's aggregation.** The rolling
+twelve-month aggregate for a related party was summing every `rpt_case` regardless of
+outcome, so a rejected (never-consummated) transaction was still pulling later
+transactions with the same party towards the 5% gate. `priorConsiderationTotal` now
+excludes a case whose latest recorded decision is a rejection
+(`workflow.approval_step.decision_key`, added by the same migration).
+
+Real gaps that remain, called out so they aren't mistaken for solved: the RRPT
+shareholder-mandate mechanism is still a classification label with no estimated/actual
+headroom tracking or 10%-over-estimate announcement trigger; related-party
+identification is still a flat basis label with no shareholding-chain or
+deemed-interest logic; there's no arm's-length/normal-commercial-terms field anywhere;
+financial basis defaults to "unaudited" regardless of what was actually relied on;
+uploaded supporting documents are hashed but not retained; and the export is a raw case
+list, not the annual-report-style disclosure table grouped by related party and nature
+of transaction. See the review that produced this list for the full account.
+
 ## What maps to what
 
 **Database** (`server/migrations/`) implements exactly the schema in the design doc's
@@ -163,7 +220,7 @@ connection:
 
 **Backend modules** (`server/src/modules/`) mirror the doc's bounded contexts:
 `registry`, `intake`, `materiality` (a pure `engine.ts` for the ratio tests and gate,
-parameterized by the rule set — nothing hardcodes 0.25%/5%), `workflow`, `audit`. Each
+parameterized by the rule set — nothing hardcodes the 5% figure), `workflow`, `audit`. Each
 owns its own tables; the one cross-schema read (case list/detail, joining case + party
 + evaluation + decision for the API) lives in `intake/summary.ts` as a presentation
 query, not a write path.

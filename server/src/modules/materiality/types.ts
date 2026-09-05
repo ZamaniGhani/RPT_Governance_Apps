@@ -1,6 +1,12 @@
 export interface Thresholds {
-  announceThreshold: number;
-  circularThreshold: number;
+  /**
+   * The single percentage-ratio trigger for both an immediate announcement
+   * and a circular + shareholder approval (Bursa MMLR Ch.10 Part III) — real
+   * practice does not have a separate lower "announce only" band; a v2026.1
+   * predecessor rule set did, in error, and has been retired (see the
+   * 1700000007000 migration).
+   */
+  materialThreshold: number;
   profitAttributableFactor: number;
 }
 

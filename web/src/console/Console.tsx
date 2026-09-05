@@ -170,6 +170,7 @@ export function Console({ user, onSignedOut }: { user: CurrentUser; onSignedOut:
               onGoIntake={() => setTab('intake')}
               onChanged={refresh}
               canDecide={canUse('compliance')}
+              currentUserDisplayName={user.displayName}
             />
           )}
           {tab === 'intake' && (

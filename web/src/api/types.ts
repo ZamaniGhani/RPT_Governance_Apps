@@ -87,6 +87,7 @@ export interface CaseSummary {
   routeVersion: string;
   status: 'open' | 'decided';
   decision: { id: string; label: string; rationale: string | null; decidedAt: string; actor: string } | null;
+  pendingApproval: { actorId: string; actorLabel: string; approvedAt: string } | null;
 }
 
 export interface PartyRow {
@@ -140,8 +141,8 @@ export interface SubmitCasePayload {
 }
 
 export interface Thresholds {
-  announceThreshold: number;
-  circularThreshold: number;
+  /** Single percentage-ratio trigger for both announcement and circular/shareholder approval — see server/src/modules/materiality/types.ts. */
+  materialThreshold: number;
   profitAttributableFactor: number;
 }
 

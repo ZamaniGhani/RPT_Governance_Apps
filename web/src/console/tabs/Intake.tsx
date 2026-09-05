@@ -362,7 +362,7 @@ export function Intake({
                     fontWeight: 600,
                     fontSize: 16,
                     fontVariantNumeric: 'tabular-nums',
-                    color: t.pct === null ? 'var(--color-neutral-500)' : t.pct >= 5 ? 'var(--color-error-text)' : t.pct >= 0.25 ? 'var(--color-warning-text)' : 'var(--color-neutral-700)',
+                    color: t.pct === null ? 'var(--color-neutral-500)' : t.pct >= (thresholds?.materialThreshold ?? 5) ? 'var(--color-error-text)' : 'var(--color-neutral-700)',
                   }}
                 >
                   {t.pct === null ? '—' : fmtPct(t.pct)}
@@ -373,10 +373,14 @@ export function Intake({
                   className="ratio-bar-fill"
                   style={{
                     width: `${t.pct === null ? 0 : Math.min(100, (t.pct / 8) * 100).toFixed(1)}%`,
-                    background: t.pct !== null && t.pct >= 5 ? 'var(--color-error)' : t.pct !== null && t.pct >= 0.25 ? 'var(--color-warning)' : 'var(--color-accent)',
+                    background: t.pct !== null && t.pct >= (thresholds?.materialThreshold ?? 5) ? 'var(--color-error)' : 'var(--color-accent)',
                   }}
                 />
-                <span className="ratio-bar-gate" />
+                <span
+                  className="ratio-bar-gate"
+                  style={{ left: `${Math.min(100, ((thresholds?.materialThreshold ?? 5) / 8) * 100).toFixed(1)}%` }}
+                  title={`${thresholds?.materialThreshold ?? 5}% listing-rule gate`}
+                />
               </div>
             </div>
           ))}

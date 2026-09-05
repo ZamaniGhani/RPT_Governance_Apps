@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { pool, withTransaction } from '../../db.js';
 import { actorFromRequest, actorLabel } from '../../shared/actor.js';
+import { appendEvent } from '../audit/index.js';
 import { requireDepartment } from '../auth/index.js';
 import { HttpError } from '../../shared/httpError.js';
-import { closeRelation, createParty, createRelation, findActiveRelation, findPartyByName, getPartyById, updatePartyFields } from './repository.js';
+import { closeRelation, confirmRelation, createParty, createRelation, findActiveRelation, findPartyByName, getPartyById, updatePartyFields } from './repository.js';
 import { BASIS_OPTIONS, basisCodeForLabel } from './types.js';
 
 export const registryRouter = Router();
@@ -144,6 +145,39 @@ registryRouter.patch('/parties/:id', requireDepartment('secretariat'), async (re
     res.json(toPartyRow(result.rows[0]));
   } catch (err) {
     if (err instanceof z.ZodError) return next(new HttpError(422, err.issues.map((i) => i.message).join('; ')));
+    next(err);
+  }
+});
+
+// Confirm: an Intake-proposed relation sits "Unconfirmed" until the
+// secretariat has actually checked it against a primary source (the
+// director/substantial-shareholder register, a declaration, whatever it
+// takes) — this is that check being recorded, not a rubber stamp. Confirming
+// something already confirmed is a no-op rather than an error, so double
+// clicks and re-syncs are harmless.
+registryRouter.post('/parties/:id/confirm', requireDepartment('secretariat'), async (req, res, next) => {
+  try {
+    const partyId = req.params.id!;
+    const actor = actorFromRequest(req);
+    await withTransaction(async (client) => {
+      const active = await findActiveRelation(client, partyId);
+      if (!active) throw new HttpError(404, 'Party not found or has no active register entry');
+      if (active.confirmed_at) return;
+      await confirmRelation(client, active.id, actorLabel(actor));
+      const party = await getPartyById(client, partyId);
+      await appendEvent(client, {
+        aggregateType: 'registry_party',
+        aggregateId: partyId,
+        type: 'PartyRelationConfirmed',
+        actorId: actorLabel(actor),
+        detail: `${party?.legal_name ?? partyId} (${active.basis_label}) confirmed in the register by ${actorLabel(actor)}.`,
+        payload: { relationId: active.id },
+      });
+    });
+    const result = await pool.query<PartyListRow>(`${LIST_QUERY} where p.id = $1`, [partyId]);
+    if (!result.rows[0]) throw new HttpError(404, 'Party not found');
+    res.json(toPartyRow(result.rows[0]));
+  } catch (err) {
     next(err);
   }
 });

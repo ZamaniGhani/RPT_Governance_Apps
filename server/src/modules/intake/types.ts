@@ -34,6 +34,9 @@ export interface RptCaseRow {
   route_version: string;
   status: 'open' | 'decided';
   created_at: string;
+  pending_approver_id: string | null;
+  pending_approver_label: string | null;
+  pending_approved_at: string | null;
 }
 
 export interface RptDocumentRow {

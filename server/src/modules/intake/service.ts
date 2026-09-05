@@ -3,7 +3,7 @@ import { appendEvent } from '../audit/index.js';
 import { basisCodeForLabel, confirmRelation, createParty, createRelation, findActiveRelation, findPartyByName } from '../registry/index.js';
 import { computeRatios, createEvaluation, createFinancialPeriod, gateFor, getCurrentRuleSet, getEvaluationForCase, priorConsiderationTotal, topRatio } from '../materiality/index.js';
 import { insertApprovalStep, latestApprovalStep } from '../workflow/index.js';
-import { getDocument, insertCase, nextCaseRef, setCaseStatus } from './repository.js';
+import { getCase, getDocument, insertCase, nextCaseRef, setCaseStatus, setPendingApprover } from './repository.js';
 import { ROUTE_VERSION, type SubmitCaseInput } from './types.js';
 import { HttpError } from '../../shared/httpError.js';
 import type { Actor } from '../../shared/actor.js';
@@ -168,10 +168,91 @@ const APPROVE_LABEL_BY_GATE: Record<string, string> = {
   none: 'Record as reviewed',
 };
 
-export async function decideCase(caseId: string, decision: 'approve' | 'reject' | 'refer', rationale: string | null, actor: Actor) {
+/**
+ * Two controls the Alerts UI previously only claimed to have:
+ *
+ * 1. A conflict attestation — every decision (approve, reject, or refer)
+ *    requires the deciding user to actively confirm they are not a related
+ *    party to the transaction and have no interest in it. Interested-party
+ *    abstention applies to the whole deliberation, not only a "yes" vote.
+ * 2. Maker-checker at the circular gate — a case that needs shareholder
+ *    approval isn't finalised on one person's click. The first approval is
+ *    held on the case as "pending", and a second, different Compliance or
+ *    Admin account must approve it before status flips to 'decided'. Reject
+ *    and refer stay single-sign-off, since either one halts the transaction
+ *    rather than letting it proceed.
+ */
+export async function decideCase(
+  caseId: string,
+  decision: 'approve' | 'reject' | 'refer',
+  rationale: string | null,
+  actor: Actor,
+  conflictConfirmed: boolean
+) {
   return withTransaction(async (client) => {
+    if (!conflictConfirmed) {
+      throw new HttpError(422, 'You must confirm you are not a related party to this transaction and have no interest in it before deciding it.');
+    }
+
+    const kase = await getCase(client, caseId);
+    if (!kase) throw new HttpError(404, 'Case not found');
     const evaluation = await getEvaluationForCase(client, caseId);
-    const approveLabel = APPROVE_LABEL_BY_GATE[evaluation?.gate ?? 'none']!;
+    const gateKey = evaluation?.gate ?? 'none';
+    const approveLabel = APPROVE_LABEL_BY_GATE[gateKey]!;
+
+    if (decision === 'approve' && gateKey === 'circular') {
+      if (kase.pending_approver_id === actor.id) {
+        throw new HttpError(
+          409,
+          'You already recorded the first approval on this case. A different Compliance or Admin account must provide the second sign-off — that is the control, not a formality.'
+        );
+      }
+      if (!kase.pending_approver_id) {
+        const label = 'First approval recorded — awaiting a second, different Compliance sign-off before this counts as approved';
+        const step = await insertApprovalStep(client, {
+          caseId,
+          role: actor.role,
+          actorId: actorLabel(actor),
+          decision: label,
+          decisionKey: 'approve',
+          rationale,
+          conflictConfirmed,
+        });
+        await setPendingApprover(client, caseId, { id: actor.id, label: actorLabel(actor), at: new Date().toISOString() });
+        await appendEvent(client, {
+          aggregateType: 'rpt_case',
+          aggregateId: caseId,
+          type: 'FirstApprovalRecorded',
+          actorId: actorLabel(actor),
+          detail: `${label}${rationale ? ` — ${rationale}` : ''}.`,
+          payload: { rationale },
+        });
+        return step;
+      }
+
+      const label = `${approveLabel} — recorded (dual sign-off: ${kase.pending_approver_label}, then ${actorLabel(actor)})`;
+      const step = await insertApprovalStep(client, {
+        caseId,
+        role: actor.role,
+        actorId: actorLabel(actor),
+        decision: label,
+        decisionKey: 'approve',
+        rationale,
+        conflictConfirmed,
+      });
+      await setCaseStatus(client, caseId, 'decided');
+      await setPendingApprover(client, caseId, null);
+      await appendEvent(client, {
+        aggregateType: 'rpt_case',
+        aggregateId: caseId,
+        type: 'DecisionRecorded',
+        actorId: actorLabel(actor),
+        detail: `${label}${rationale ? ` — ${rationale}` : ''}.`,
+        payload: { decision: label, rationale },
+      });
+      return step;
+    }
+
     const labels = {
       approve: `${approveLabel} — recorded`,
       reject: 'Rejected — returned to submitter',
@@ -184,10 +265,13 @@ export async function decideCase(caseId: string, decision: 'approve' | 'reject' 
       role: actor.role,
       actorId: actorLabel(actor),
       decision: label,
+      decisionKey: decision,
       rationale,
+      conflictConfirmed,
     });
 
     await setCaseStatus(client, caseId, 'decided');
+    await setPendingApprover(client, caseId, null);
 
     await appendEvent(client, {
       aggregateType: 'rpt_case',
@@ -205,6 +289,7 @@ export async function decideCase(caseId: string, decision: 'approve' | 'reject' 
 export async function reopenCase(caseId: string, actor: Actor) {
   return withTransaction(async (client) => {
     await setCaseStatus(client, caseId, 'open');
+    await setPendingApprover(client, caseId, null);
     await appendEvent(client, {
       aggregateType: 'rpt_case',
       aggregateId: caseId,

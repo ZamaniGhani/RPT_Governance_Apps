@@ -73,14 +73,24 @@ export async function getEvaluationForCase(db: Executor, caseId: string): Promis
   return result.rows[0] ?? null;
 }
 
-/** Rolling twelve-month consideration total with this counterparty, for aggregation. */
+/**
+ * Rolling twelve-month consideration total with this counterparty, for
+ * aggregation. A case whose latest decision is a rejection never proceeded,
+ * so it must not inflate the aggregate that later transactions with the
+ * same party are tested against — only cases that are still open (pending a
+ * decision) or that were approved/referred count.
+ */
 export async function priorConsiderationTotal(db: Executor, counterpartyPartyId: string, beforeDate: Date): Promise<number> {
   const result = await db.query<{ total: string | null }>(
-    `select sum(consideration_myr)::text as total
-     from intake.rpt_case
-     where counterparty_party_id = $1
-       and created_at >= $2::timestamptz - interval '12 months'
-       and created_at < $2::timestamptz`,
+    `select sum(c.consideration_myr)::text as total
+     from intake.rpt_case c
+     left join lateral (
+       select decision_key from workflow.approval_step where case_id = c.id order by seq desc limit 1
+     ) latest on true
+     where c.counterparty_party_id = $1
+       and c.created_at >= $2::timestamptz - interval '12 months'
+       and c.created_at < $2::timestamptz
+       and coalesce(latest.decision_key, 'approve') <> 'reject'`,
     [counterpartyPartyId, beforeDate.toISOString()]
   );
   return Number(result.rows[0]?.total ?? 0);

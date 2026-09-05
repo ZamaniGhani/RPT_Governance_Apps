@@ -100,13 +100,14 @@ intakeRouter.post('/cases', requireDepartment('finance'), async (req, res, next)
 const decisionSchema = z.object({
   decision: z.enum(['approve', 'reject', 'refer']),
   rationale: z.string().trim().nullable().optional(),
+  confirmNoConflict: z.boolean().default(false),
 });
 
 intakeRouter.post('/cases/:id/decision', requireDepartment('compliance'), async (req, res, next) => {
   try {
     const body = decisionSchema.parse(req.body);
     const actor = actorFromRequest(req);
-    await decideCase(req.params.id!, body.decision, body.rationale?.trim() || null, actor);
+    await decideCase(req.params.id!, body.decision, body.rationale?.trim() || null, actor, body.confirmNoConflict);
     res.json(await getCaseSummary(pool, req.params.id!));
   } catch (err) {
     if (err instanceof z.ZodError) return next(new HttpError(422, err.issues.map((i) => i.message).join('; ')));
